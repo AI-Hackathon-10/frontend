@@ -64,19 +64,18 @@ describe('app shell routing contract', () => {
     expect(document.querySelector('.route-progress')).not.toBeInTheDocument()
   })
 
-  it('renders twenty symptoms and keeps the search action disabled until one is selected', () => {
+  it('shows primary symptoms first and keeps the search action disabled until one is selected', () => {
     render(
       <MemoryRouter initialEntries={['/identify/image']}>
         <App />
       </MemoryRouter>,
     )
 
-    const symptomButtons = [
-      '두통', '발열', '기침', '인후통', '콧물', '코막힘', '복통', '소화불량', '설사', '변비',
-      '속쓰림', '구토/메스꺼움', '근육통', '생리통', '치통', '알레르기', '피부 가려움', '몸살', '어지러움', '오한',
-    ]
+    const symptomButtons = ['두통', '발열', '기침', '콧물·코막힘', '인후통', '복통', '소화불량·속쓰림', '설사']
 
-    expect(symptomButtons).toHaveLength(20)
+    expect(symptomButtons).toHaveLength(8)
+    expect(screen.queryByRole('link', { name: '이전 화면으로 이동' })).not.toBeInTheDocument()
+    expect(screen.getByText('AI 결과는 참고용 정보에요.')).toHaveClass('page-footnote')
     symptomButtons.forEach((symptom) => {
       expect(screen.getByRole('button', { name: symptom, exact: true })).toBeInTheDocument()
     })
@@ -86,11 +85,32 @@ describe('app shell routing contract', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '두통', exact: true }))
     expect(screen.getByRole('button', { name: '두통', exact: true })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '다른 증상 찾기', exact: true })).toBeInTheDocument()
     expect(searchButton).toBeEnabled()
 
     fireEvent.click(screen.getByRole('button', { name: '두통', exact: true }))
     expect(screen.getByRole('button', { name: '두통', exact: true })).toHaveAttribute('aria-pressed', 'false')
     expect(searchButton).toBeDisabled()
+  })
+
+  it('selects multiple symptoms from categorized symptom sheet', () => {
+    render(
+      <MemoryRouter initialEntries={['/identify/image']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '다른 증상 찾기', exact: true }))
+    expect(screen.getByRole('dialog', { name: '증상 선택' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '감기·호흡기' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '피부' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '재채기', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '발진', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '선택 완료', exact: true }))
+
+    expect(screen.getByRole('button', { name: '재채기 삭제', exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '발진 삭제', exact: true })).toBeInTheDocument()
   })
 
   it('passes selected symptoms into the mock result screen', () => {
@@ -154,6 +174,12 @@ describe('app shell routing contract', () => {
       fireEvent.click(screen.getByRole('button', { name: '앞면 사진 삭제', exact: true }))
       expect(screen.queryByAltText('앞면 업로드 미리보기')).not.toBeInTheDocument()
       expect(revokeObjectURL).toHaveBeenCalledWith('blob:front-preview')
+
+      fireEvent.drop(screen.getByRole('button', { name: '앞면 이미지 선택 영역', exact: true }), {
+        dataTransfer: { files: [file] },
+      })
+      expect(screen.getByAltText('앞면 업로드 미리보기')).toHaveAttribute('src', 'blob:front-preview')
+      expect(createObjectURL).toHaveBeenCalledTimes(2)
     } finally {
       Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: originalCreateObjectURL })
       Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: originalRevokeObjectURL })

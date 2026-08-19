@@ -92,12 +92,19 @@ export const FACILITIES = [
   },
 ]
 
-export const SYMPTOM_OPTIONS = [
-  '두통', '발열', '기침', '인후통', '콧물',
-  '코막힘', '복통', '소화불량', '설사', '변비',
-  '속쓰림', '구토/메스꺼움', '근육통', '생리통', '치통',
-  '알레르기', '피부 가려움', '몸살', '어지러움', '오한',
+export const PRIMARY_SYMPTOMS = [
+  '두통', '발열', '기침', '콧물·코막힘', '인후통', '복통', '소화불량·속쓰림', '설사',
 ]
+
+export const SYMPTOM_CATEGORIES = [
+  { name: '감기·호흡기', symptoms: ['기침', '콧물', '코막힘', '재채기', '인후통', '가래', '발열', '오한'] },
+  { name: '머리·전신', symptoms: ['두통', '어지러움', '몸살', '피로'] },
+  { name: '소화기', symptoms: ['복통', '소화불량', '속쓰림', '설사', '변비', '메스꺼움', '구토'] },
+  { name: '근육·통증', symptoms: ['근육통', '관절통', '허리통증', '목통증', '어깨통증', '치통'] },
+  { name: '피부', symptoms: ['가려움', '발진', '두드러기'] },
+]
+
+export const SYMPTOM_OPTIONS = SYMPTOM_CATEGORIES.flatMap(({ symptoms }) => symptoms)
 
 export const DEMO_IDENTIFY_RESULT = {
   status: 'success',
