@@ -75,7 +75,7 @@ describe('app shell routing contract', () => {
 
     expect(symptomButtons).toHaveLength(8)
     expect(screen.queryByRole('link', { name: '이전 화면으로 이동' })).not.toBeInTheDocument()
-    expect(screen.getByText('AI 결과는 참고용 정보에요.')).toHaveClass('page-footnote')
+    expect(screen.getByText('AI 판별 결과는 참고용이며, 사진은 서버에 저장되지 않습니다.')).toHaveClass('page-footnote')
     symptomButtons.forEach((symptom) => {
       expect(screen.getByRole('button', { name: symptom, exact: true })).toBeInTheDocument()
     })
@@ -137,15 +137,41 @@ describe('app shell routing contract', () => {
     )
 
     expect(screen.queryByRole('button', { name: '촬영하기', exact: true })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '앨범에서 선택하기', exact: true })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '파일 탐색기에서 선택하기', exact: true })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '사진 보관함에서 선택하기', exact: true })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '파일에서 선택하기', exact: true })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /사진 선택|사진 바꾸기/ })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '앞면 이미지 선택 영역', exact: true }))
 
+    expect(screen.getByRole('dialog', { name: '사진 추가' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '촬영하기', exact: true })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '앨범에서 선택하기', exact: true })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '파일 탐색기에서 선택하기', exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '사진 보관함에서 선택하기', exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '파일에서 선택하기', exact: true })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '취소', exact: true }))
+    expect(screen.queryByRole('dialog', { name: '사진 추가' })).not.toBeInTheDocument()
+  })
+
+  it('adds pill photo sets at the end and only allows added sets to be removed', () => {
+    render(
+      <MemoryRouter initialEntries={['/identify/image']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('heading', { name: '알약 1', exact: true })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '알약 1 삭제', exact: true })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: '알약 추가', exact: true })).toHaveLength(1)
+
+    fireEvent.click(screen.getByRole('button', { name: '알약 추가', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '알약 추가', exact: true }))
+
+    expect(screen.getByRole('heading', { name: '알약 2', exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '알약 3', exact: true })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: '알약 추가', exact: true })).toHaveLength(1)
+
+    fireEvent.click(screen.getByRole('button', { name: '알약 2 삭제', exact: true }))
+    expect(screen.queryByRole('heading', { name: '알약 3', exact: true })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { name: '알약 2', exact: true })).toHaveLength(1)
   })
 
   it('previews and removes locally selected pill photos', () => {
@@ -166,7 +192,7 @@ describe('app shell routing contract', () => {
 
       const file = new File(['pill-image'], 'front.png', { type: 'image/png' })
       fireEvent.click(screen.getByRole('button', { name: '앞면 이미지 선택 영역', exact: true }))
-      fireEvent.change(screen.getByLabelText('앞면 앨범에서 선택하기'), { target: { files: [file] } })
+      fireEvent.change(screen.getByLabelText('앞면 사진 보관함에서 선택하기'), { target: { files: [file] } })
 
       expect(screen.getByAltText('앞면 업로드 미리보기')).toHaveAttribute('src', 'blob:front-preview')
       expect(createObjectURL).toHaveBeenCalledWith(file)
