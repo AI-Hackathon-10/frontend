@@ -110,6 +110,21 @@ describe('app shell routing contract', () => {
     expect(headache).toHaveAttribute('aria-pressed', 'false')
   })
 
+  it('provides date and hourly time inputs for symptom onset', () => {
+    render(
+      <MemoryRouter initialEntries={['/symptoms']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    const onsetDate = screen.getByLabelText('증상 시작 날짜')
+    const onsetTime = screen.getByLabelText('증상 시작 시간')
+
+    expect(onsetDate).toHaveAttribute('type', 'date')
+    expect(onsetTime).toHaveAttribute('type', 'time')
+    expect(onsetTime).toHaveAttribute('step', '3600')
+  })
+
   it('passes selected symptoms into the mock result screen', () => {
     render(
       <MemoryRouter initialEntries={['/identify/image']}>
