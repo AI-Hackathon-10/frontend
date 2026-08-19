@@ -14,11 +14,14 @@ function RouteProgress() {
 }
 
 export default function AppShell({ children }) {
+  const { pathname } = useLocation()
+  const isAuthRoute = pathname === '/login' || pathname === '/signup'
+
   return (
     <div className="site-background">
       <div className="site-orb site-orb--one" />
       <div className="site-orb site-orb--two" />
-      <div className="app-shell">
+      <div className={`app-shell ${isAuthRoute ? 'app-shell--auth' : ''}`.trim()}>
         <header className="desktop-header">
           <Link aria-label="알약케어 홈" className="brand-lockup" to="/">
             <span className="brand-mark"><Icon name="pill" size={21} /></span>
