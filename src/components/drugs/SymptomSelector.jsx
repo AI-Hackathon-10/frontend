@@ -21,12 +21,11 @@ export default function SymptomSelector({ categories, primarySymptoms, selected,
     <section aria-labelledby="symptom-selector-title" className="symptom-selector">
       <div className="section-heading section-heading--tight">
         <div>
-          <span className="eyebrow">현재 상태</span>
-          <h2 id="symptom-selector-title">현재 어떤 증상이 있나요?</h2>
+          <h2 id="symptom-selector-title">증상 선택</h2>
         </div>
         <span className="symptom-count" aria-live="polite">{selected.length}개 선택</span>
       </div>
-      <p className="section-helper">해당되는 증상을 모두 선택해 주세요.</p>
+      <p className="section-helper">해당되는 증상을 모두 선택할 수 있어요.</p>
       <div className="symptom-selector__grid">
         {primarySymptoms.map((symptom) => {
           const isSelected = selected.includes(symptom)
@@ -62,7 +61,7 @@ export default function SymptomSelector({ categories, primarySymptoms, selected,
           <section aria-labelledby="symptom-sheet-title" aria-modal="true" className="symptom-sheet" role="dialog">
             <div className="symptom-sheet__handle" aria-hidden="true" />
             <header className="symptom-sheet__header">
-              <div><h3 id="symptom-sheet-title">증상 선택</h3><p>해당되는 증상을 모두 선택해 주세요.</p></div>
+              <div><h3 id="symptom-sheet-title">증상 선택</h3><p>추가할 증상을 모두 골라 주세요.</p></div>
               <button aria-label="증상 선택 닫기" className="symptom-sheet__close" onClick={() => setIsOpen(false)} ref={closeButtonRef} type="button"><Icon name="close" size={18} /></button>
             </header>
             <div className="symptom-sheet__body">

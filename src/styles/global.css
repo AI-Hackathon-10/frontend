@@ -420,7 +420,7 @@ svg {
   gap: 10px;
   min-height: 50px;
   padding: 0 22px;
-  border-radius: 16px;
+  border-radius: 12px;
   font-size: 13px;
   font-weight: 850;
   letter-spacing: -0.035em;
@@ -2577,12 +2577,80 @@ button:disabled {
   gap: 12px;
 }
 
+.pill-set-list {
+  display: grid;
+  gap: 0;
+}
+
+.pill-set + .pill-set {
+  margin-top: 12px;
+}
+
+.pill-set__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+
+.pill-set__header h3 {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+}
+
+.pill-set__header button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 30px;
+  padding: 0 8px;
+  color: var(--danger);
+  background: #fff7f8;
+  border: 1px solid #f2dadd;
+  border-radius: 9px;
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.pill-set__header button:hover {
+  color: var(--danger);
+  background: #fff0f2;
+  border-color: #e9c3c8;
+}
+
+.pill-set-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: max-content;
+  min-height: 34px;
+  margin: 12px auto 0;
+  color: var(--ink-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.pill-set-add:hover {
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+}
+
 .upload-card {
   min-width: 0;
   padding: 12px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: 14px;
 }
 
 .upload-card__topline,
@@ -2637,7 +2705,7 @@ button:disabled {
   color: var(--ink-muted);
   background: var(--surface-soft);
   border: 1px dashed var(--border-strong);
-  border-radius: 15px;
+  border-radius: 10px;
   cursor: pointer;
 }
 
@@ -2733,11 +2801,56 @@ button:disabled {
   background: var(--primary-pale);
 }
 
-.upload-source-picker {
+.upload-action-backdrop {
+  position: fixed;
+  z-index: 60;
+  inset: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-  margin-top: 8px;
+  padding: 24px;
+  place-items: center;
+  background: rgba(20, 43, 58, 0.35);
+}
+
+.upload-source-picker {
+  width: min(100%, 420px);
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.upload-source-picker__handle {
+  display: none;
+}
+
+.upload-source-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 19px 20px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.upload-source-picker__header h3 {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 850;
+  letter-spacing: -0.06em;
+}
+
+.upload-source-picker__header button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--ink-muted);
+  background: var(--surface-soft);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.upload-source-picker__options {
+  padding: 6px 14px;
 }
 
 .upload-source-picker__item {
@@ -2747,38 +2860,58 @@ button:disabled {
 .upload-source-picker__option {
   display: flex;
   min-width: 0;
-  min-height: 44px;
+  min-height: 54px;
   width: 100%;
   align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 6px 5px;
-  color: var(--primary-strong);
-  background: var(--primary-pale);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  font-size: 9px;
+  gap: 11px;
+  padding: 7px 8px;
+  color: var(--ink-soft);
+  background: transparent;
+  border-radius: 12px;
+  font-size: 12px;
   font-weight: 800;
   line-height: 1.25;
-  text-align: center;
-  overflow-wrap: anywhere;
+  text-align: left;
   cursor: pointer;
 }
 
 .upload-source-picker__option:hover {
-  background: #dff3fa;
-  border-color: var(--border-strong);
+  color: var(--primary-strong);
+  background: var(--surface-blue);
+}
+
+.upload-source-picker__option > .icon:last-child {
+  margin-left: auto;
+  color: var(--ink-muted);
+}
+
+.upload-source-picker__icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--primary-strong);
+  background: var(--primary-pale);
+  border-radius: 11px;
+}
+
+.upload-source-picker__cancel {
+  width: calc(100% - 28px);
+  min-height: 44px;
+  margin: 4px 14px 14px;
+  color: var(--ink-muted);
+  background: var(--surface-soft);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .identify-action-bar {
   display: flex;
   align-items: center;
-  gap: 13px;
   margin-top: 28px;
-  padding: 10px;
-  background: rgba(239, 248, 252, 0.72);
-  border: 1px solid var(--border);
-  border-radius: 18px;
 }
 
 .identify-action-bar .button {
@@ -3619,6 +3752,15 @@ button:disabled {
     margin-top: 24px;
   }
 
+  .identify-action-bar {
+    margin-right: 0;
+    margin-left: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
   .symptom-selector__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 7px;
@@ -3742,7 +3884,7 @@ button:disabled {
 
   .upload-card {
     padding: 8px;
-    border-radius: 16px;
+    border-radius: 12px;
   }
 
   .upload-card__topline {
@@ -3762,27 +3904,40 @@ button:disabled {
 
   .upload-card__preview {
     min-height: 125px;
-    border-radius: 12px;
+    border-radius: 9px;
   }
 
   .upload-card__footer {
     padding-top: 7px;
   }
 
-  .upload-source-picker {
-    grid-template-columns: 1fr;
+  .upload-action-backdrop {
+    align-items: end;
+    padding: 0;
   }
 
-  .upload-source-picker__option {
-    justify-content: flex-start;
-    padding-right: 10px;
-    padding-left: 10px;
-    text-align: left;
+  .upload-source-picker {
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom);
+    border-width: 1px 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .upload-source-picker__handle {
+    display: block;
+    width: 38px;
+    height: 4px;
+    margin: 9px auto 0;
+    background: var(--border-strong);
+    border-radius: 999px;
+  }
+
+  .upload-source-picker__header {
+    padding-top: 10px;
   }
 
   .identify-action-bar {
-    gap: 7px;
-    border-radius: 15px;
+    border-radius: 0;
   }
 
   .identify-action-bar .button {
