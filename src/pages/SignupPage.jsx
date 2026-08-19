@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import AuthField from '../components/user/AuthField.jsx'
 import AuthPageLayout from '../components/user/AuthPageLayout.jsx'
 import Icon from '../components/ui/Icon.jsx'
+import { signUp } from '../api/userApi.js'
+import { ApiError } from '../api/client.js'
 
 const INITIAL_FORM = {
   gender: '',
@@ -16,6 +18,8 @@ const INITIAL_FORM = {
 export default function SignupPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState(INITIAL_FORM)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   const updateField = (field) => (event) => {
     setForm((current) => ({ ...current, [field]: event.target.value }))
@@ -24,13 +28,28 @@ export default function SignupPage() {
   const isPasswordMismatch = Boolean(form.passwordConfirm && form.password !== form.passwordConfirm)
   const canSubmit = Object.values(form).every(Boolean) && !isPasswordMismatch
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    if (!canSubmit) return
+    if (!canSubmit || isSubmitting) return
 
-    navigate('/login', {
-      state: { registeredId: form.userId },
-    })
+    setSubmitError('')
+    setIsSubmitting(true)
+    try {
+      await signUp({
+        name: form.name,
+        loginId: form.userId,
+        password: form.password,
+        gender: form.gender,
+        birthDate: form.birthDate,
+      })
+      navigate('/login', {
+        state: { registeredId: form.userId },
+      })
+    } catch (error) {
+      setSubmitError(error instanceof ApiError ? error.message : '회원가입 요청 중 문제가 발생했습니다.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -46,10 +65,8 @@ export default function SignupPage() {
             <span className="auth-field__label">성별</span>
             <select id="signup-gender" name="gender" onChange={updateField('gender')} value={form.gender}>
               <option value="">성별을 선택해 주세요</option>
-              <option value="male">남성</option>
-              <option value="female">여성</option>
-              <option value="other">기타</option>
-              <option value="undisclosed">선택하지 않음</option>
+              <option value="MALE">남성</option>
+              <option value="FEMALE">여성</option>
             </select>
           </label>
           <AuthField id="signup-birthDate" label="생년월일" onChange={updateField('birthDate')} type="date" value={form.birthDate} />
@@ -61,13 +78,13 @@ export default function SignupPage() {
         <AuthField autoComplete="new-password" id="signup-passwordConfirm" label="비밀번호 확인" onChange={updateField('passwordConfirm')} placeholder="비밀번호를 한 번 더 입력해 주세요" type="password" value={form.passwordConfirm} />
 
         {isPasswordMismatch ? <p className="auth-field__error" role="alert">비밀번호가 일치하지 않습니다.</p> : null}
+        {submitError ? <p className="auth-feedback" role="alert">{submitError}</p> : null}
 
-        <button className="button button--primary button--wide auth-form__submit" disabled={!canSubmit} type="submit">
-          회원가입 완료
+        <button className="button button--primary button--wide auth-form__submit" disabled={!canSubmit || isSubmitting} type="submit">
+          {isSubmitting ? '가입 처리 중...' : '회원가입 완료'}
           <Icon name="arrowRight" size={18} />
         </button>
       </form>
-      <p className="auth-form__note">입력 정보는 API 연결 전까지 브라우저나 서버에 저장되지 않습니다.</p>
     </AuthPageLayout>
   )
 }

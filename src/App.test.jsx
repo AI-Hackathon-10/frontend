@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App.jsx'
 
 describe('app shell routing contract', () => {
@@ -234,14 +234,26 @@ describe('authentication pages', () => {
     expect(screen.getByLabelText('비밀번호 확인')).toHaveAttribute('autocomplete', 'new-password')
   })
 
-  it('redirects to login with a mock completion state after valid signup', () => {
+  it('redirects to login with a completion state after a successful signup call', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(JSON.stringify({
+        isSuccess: true,
+        code: 'USER_CREATE_SUCCESS',
+        message: '회원 가입에 성공했습니다.',
+        result: { userId: 1, loginId: 'pill-user', name: '홍길동' },
+      })),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
     render(
       <MemoryRouter initialEntries={['/signup']}>
         <App />
       </MemoryRouter>,
     )
 
-    fireEvent.change(screen.getByLabelText('성별'), { target: { value: 'female' } })
+    fireEvent.change(screen.getByLabelText('성별'), { target: { value: 'FEMALE' } })
     fireEvent.change(screen.getByLabelText('생년월일'), { target: { value: '1998-04-12' } })
     fireEvent.change(screen.getByLabelText('이름'), { target: { value: '홍길동' } })
     fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
@@ -249,9 +261,53 @@ describe('authentication pages', () => {
     fireEvent.change(screen.getByLabelText('비밀번호 확인'), { target: { value: 'safe-password' } })
     fireEvent.click(screen.getByRole('button', { name: '회원가입 완료' }))
 
-    expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/user',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          name: '홍길동',
+          loginId: 'pill-user',
+          password: 'safe-password',
+          gender: 'FEMALE',
+          birthDate: '1998-04-12',
+        }),
+      }),
+    )
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument())
     expect(screen.getByRole('status')).toHaveTextContent('회원가입이 완료되었습니다')
     expect(screen.getByLabelText('아이디')).toHaveValue('pill-user')
+  })
+
+  it('shows the server error message when signup fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: () => Promise.resolve(JSON.stringify({
+        isSuccess: false,
+        code: 'DUPLICATE_LOGIN_ID',
+        message: '이미 사용 중인 아이디입니다.',
+      })),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('성별'), { target: { value: 'MALE' } })
+    fireEvent.change(screen.getByLabelText('생년월일'), { target: { value: '1998-04-12' } })
+    fireEvent.change(screen.getByLabelText('이름'), { target: { value: '홍길동' } })
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'safe-password' } })
+    fireEvent.change(screen.getByLabelText('비밀번호 확인'), { target: { value: 'safe-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '회원가입 완료' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('이미 사용 중인 아이디입니다.')
+    expect(screen.getByRole('heading', { name: '회원가입' })).toBeInTheDocument()
   })
 
   it('keeps the signup action disabled until required values are complete', () => {
@@ -263,7 +319,7 @@ describe('authentication pages', () => {
 
     expect(screen.getByRole('button', { name: '회원가입 완료' })).toBeDisabled()
 
-    fireEvent.change(screen.getByLabelText('성별'), { target: { value: 'male' } })
+    fireEvent.change(screen.getByLabelText('성별'), { target: { value: 'MALE' } })
     fireEvent.change(screen.getByLabelText('생년월일'), { target: { value: '1998-04-12' } })
     fireEvent.change(screen.getByLabelText('이름'), { target: { value: '홍길동' } })
     fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
@@ -273,5 +329,9 @@ describe('authentication pages', () => {
 
     fireEvent.change(screen.getByLabelText('비밀번호 확인'), { target: { value: 'safe-password' } })
     expect(screen.getByRole('button', { name: '회원가입 완료' })).toBeEnabled()
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 })
