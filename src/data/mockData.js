@@ -76,6 +76,34 @@ export const DEMO_SYMPTOM_NOTE = {
   summary: '오늘 오후부터 두통과 발열이 시작되었고, 증상은 중간 정도로 느껴집니다.',
 }
 
+export const MOCK_USER_PROFILE = {
+  name: '홍길동',
+  id: 'pillcare-user',
+  gender: 'undisclosed',
+  birthDate: '1995-08-19',
+}
+
+export const SYMPTOM_REPORTS = [
+  {
+    id: 'report-2026-08-19',
+    title: '두통·발열 증상 기록',
+    createdAt: '2026-08-19T14:30:00+09:00',
+    symptoms: ['두통', '발열'],
+    severity: '중간 정도',
+    summary: '오늘 오후부터 두통과 발열이 시작되었고, 증상은 중간 정도로 느껴집니다.',
+    documentImageUrl: 'https://example.com/presigned/symptom-report-1.png',
+  },
+  {
+    id: 'report-2026-08-12',
+    title: '기침·인후통 증상 기록',
+    createdAt: '2026-08-12T21:10:00+09:00',
+    symptoms: ['기침', '인후통'],
+    severity: '가벼움',
+    summary: '기침과 인후통이 가볍게 느껴지는 상태입니다.',
+    documentImageUrl: 'https://example.com/presigned/symptom-report-2.png',
+  },
+]
+
 export function getDrugById(drugId) {
   return DRUGS.find((drug) => drug.id === drugId) ?? DRUGS[0]
 }
