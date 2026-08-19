@@ -2,17 +2,6 @@ import { Link, useLocation } from 'react-router-dom'
 import Icon from '../ui/Icon.jsx'
 import GlobalNav from './GlobalNav.jsx'
 
-function RouteProgress() {
-  const { pathname } = useLocation()
-  const isFeature = pathname !== '/' && pathname !== '/search/results'
-
-  return (
-    <div className="route-progress" aria-hidden="true">
-      <span className={isFeature ? 'is-visible' : ''} />
-    </div>
-  )
-}
-
 export default function AppShell({ children }) {
   const { pathname } = useLocation()
   const isAuthRoute = pathname === '/login' || pathname === '/signup'
@@ -42,7 +31,6 @@ export default function AppShell({ children }) {
           <span className="mobile-header__status"><Icon name="shield" size={17} /> 참고용</span>
         </header>
 
-        <RouteProgress />
         <main className="page-scroll">
           <div className="page-content">{children}</div>
         </main>

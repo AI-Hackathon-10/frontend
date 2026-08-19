@@ -61,6 +61,7 @@ describe('app shell routing contract', () => {
     )
 
     expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument()
+    expect(document.querySelector('.route-progress')).not.toBeInTheDocument()
   })
 
   it('renders twenty symptoms and keeps the search action disabled until one is selected', () => {
