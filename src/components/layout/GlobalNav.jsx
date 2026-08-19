@@ -5,7 +5,6 @@ const navItems = [
   { label: '홈', to: '/', icon: 'home', end: true },
   { label: '알약 찾기', to: '/identify/image', icon: 'pill' },
   { label: '증상 기록', to: '/symptoms', icon: 'notes' },
-  { label: '응급실', to: '/facilities', icon: 'emergency' },
 ]
 
 export default function GlobalNav() {

@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Icon from '../components/ui/Icon.jsx'
@@ -13,8 +12,7 @@ export default function SymptomPage() {
       <section className="form-section" aria-labelledby="symptom-time-title"><div className="section-heading section-heading--tight"><div><span className="eyebrow">02 · 시작 시점</span><h2 id="symptom-time-title">언제부터였나요?</h2></div></div><div className="select-preview"><Icon name="clock" size={18} /><span>{DEMO_SYMPTOM_NOTE.onset}</span><Icon className="select-preview__arrow" name="chevronDown" size={17} /></div></section>
       <section className="form-section" aria-labelledby="symptom-memo-title"><div className="section-heading section-heading--tight"><div><span className="eyebrow">03 · 메모</span><h2 id="symptom-memo-title">더 알려주고 싶은 내용</h2></div><span className="character-count">24 / 200</span></div><div className="textarea-preview">{DEMO_SYMPTOM_NOTE.memo}<span className="textarea-preview__cursor" /></div></section>
       <section className="summary-card" aria-labelledby="summary-title"><div className="summary-card__topline"><span className="eyebrow">의료진에게 보여줄 요약</span><Badge tone="mint">예시 기록</Badge></div><h2 id="summary-title">현재 상태를 한 문장으로</h2><p>{DEMO_SYMPTOM_NOTE.summary}</p><div className="summary-card__footer"><span><Icon name="check" size={15} /> 기록 준비 완료</span><span>참고용</span></div></section>
-      <Link className="button button--primary button--wide" to="/facilities"><span>응급의료기관 확인하기</span><Icon className="button__trailing" name="arrowRight" size={18} /></Link>
-      <p className="page-footnote"><Icon name="shield" size={15} /> 증상이 심하거나 갑작스러우면 즉시 119 또는 의료기관에 연락하세요.</p>
+      <p className="page-footnote"><Icon name="shield" size={15} /> 증상 기록은 참고용이며, 필요한 경우 의료진에게 보여주세요.</p>
     </div>
   )
 }

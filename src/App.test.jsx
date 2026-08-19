@@ -15,17 +15,18 @@ describe('app shell routing contract', () => {
     expect(screen.queryByText('최근 확인한 약품')).not.toBeInTheDocument()
   })
 
-  it('exposes the emergency facility destination from the primary navigation', () => {
+  it('does not expose the removed emergency facility destination', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
       </MemoryRouter>,
     )
 
-    expect(screen.getAllByRole('link', { name: '응급실' }).every((link) => link.getAttribute('href') === '/facilities')).toBe(true)
+    expect(screen.queryByRole('link', { name: '응급실' })).not.toBeInTheDocument()
+    expect(screen.queryByText('응급실 찾기')).not.toBeInTheDocument()
   })
 
-  it('renders example drug and facility records', () => {
+  it('renders example drug records', () => {
     render(
       <MemoryRouter initialEntries={['/drugs/prime-tablet']}>
         <App />
@@ -35,14 +36,6 @@ describe('app shell routing contract', () => {
     expect(screen.getByText('한국프라임제약(주)')).toBeInTheDocument()
     expect(screen.getByText('[M214134] 덱시부프로펜')).toBeInTheDocument()
 
-    render(
-      <MemoryRouter initialEntries={['/facilities']}>
-        <App />
-      </MemoryRouter>,
-    )
-
-    expect(screen.getByText('성남중앙응급의료센터')).toBeInTheDocument()
-    expect(screen.getByText('분당새봄병원 응급실')).toBeInTheDocument()
   })
 
   it.each([
@@ -52,7 +45,6 @@ describe('app shell routing contract', () => {
     ['/search/results', '검색 결과'],
     ['/drugs/prime-tablet', '프리메정'],
     ['/symptoms', '증상 기록'],
-    ['/facilities', '가까운 응급의료기관'],
   ])('renders the expected heading for %s', (route, heading) => {
     render(
       <MemoryRouter initialEntries={[route]}>
@@ -180,7 +172,7 @@ describe('app shell routing contract', () => {
     expect(screen.getByRole('status')).toHaveTextContent('복용 기록이 저장되었습니다')
   })
 
-  it.each(['/', '/identify/image', '/identify/shape', '/search/results', '/drugs/prime-tablet', '/symptoms', '/facilities'])(
+  it.each(['/', '/identify/image', '/identify/shape', '/search/results', '/drugs/prime-tablet', '/symptoms'])(
     'does not expose the removed emergency call CTA on %s',
     (route) => {
       render(
@@ -193,13 +185,4 @@ describe('app shell routing contract', () => {
     },
   )
 
-  it('does not render a phone action in facility cards', () => {
-    render(
-      <MemoryRouter initialEntries={['/facilities']}>
-        <App />
-      </MemoryRouter>,
-    )
-
-    expect(screen.queryByRole('button', { name: '전화', exact: true })).not.toBeInTheDocument()
-  })
 })

@@ -56,39 +56,6 @@ export const DRUGS = [
   },
 ]
 
-export const FACILITIES = [
-  {
-    id: 'seongnam-emergency',
-    name: '성남중앙응급의료센터',
-    type: '응급의료기관',
-    distance: '1.8km',
-    address: '경기도 성남시 분당구 중앙로 48',
-    phone: '031-000-1199',
-    status: '진료 가능 여부 확인 필요',
-    mapPosition: { left: '51%', top: '46%' },
-  },
-  {
-    id: 'bundang-medical-center',
-    name: '분당새봄병원 응급실',
-    type: '응급의료기관',
-    distance: '2.6km',
-    address: '경기도 성남시 분당구 돌마로 72',
-    phone: '031-000-8272',
-    status: '24시간 운영 정보 확인',
-    mapPosition: { left: '69%', top: '62%' },
-  },
-  {
-    id: 'pangyo-emergency',
-    name: '판교안심의료원 응급실',
-    type: '응급의료기관',
-    distance: '4.1km',
-    address: '경기도 성남시 수정구 판교로 110',
-    phone: '031-000-4110',
-    status: '진료 가능 여부 확인 필요',
-    mapPosition: { left: '30%', top: '31%' },
-  },
-]
-
 export const SYMPTOM_OPTIONS = [
   '두통', '발열', '기침', '인후통', '콧물',
   '코막힘', '복통', '소화불량', '설사', '변비',
