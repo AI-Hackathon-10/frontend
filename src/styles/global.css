@@ -1856,6 +1856,33 @@ svg {
   color: var(--ink-muted);
 }
 
+.onset-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.onset-field {
+  display: grid;
+  gap: 7px;
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.onset-field input {
+  width: 100%;
+  min-height: 53px;
+  padding: 0 13px;
+  color: var(--ink-soft);
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  font-size: 12px;
+}
+
 .character-count {
   color: var(--ink-muted);
   font-size: 10px;
