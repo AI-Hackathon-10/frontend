@@ -1,18 +1,32 @@
-import { createContext, useContext, useState } from 'react'
-import { MOCK_USER_PROFILE } from '../../data/mockData.js'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { login as loginRequest, logout as logoutRequest } from '../../api/authApi.js'
+import { setOnSessionExpired } from '../../api/client.js'
+import { clearSession, getUserFromSession, saveSession } from '../../api/session.js'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(() => getUserFromSession())
   const [mockPassword, setMockPassword] = useState('')
 
-  const login = ({ id, password }) => {
-    setUser({ ...MOCK_USER_PROFILE, id })
+  useEffect(() => {
+    setOnSessionExpired(() => {
+      setUser(null)
+      setMockPassword('')
+    })
+    return () => setOnSessionExpired(null)
+  }, [])
+
+  const login = async ({ id, password }) => {
+    const { accessToken, refreshToken } = await loginRequest({ loginId: id, password })
+    saveSession({ accessToken, refreshToken, loginId: id })
+    setUser(getUserFromSession())
     setMockPassword(password)
   }
 
   const logout = () => {
+    logoutRequest().catch(() => {})
+    clearSession()
     setUser(null)
     setMockPassword('')
   }
