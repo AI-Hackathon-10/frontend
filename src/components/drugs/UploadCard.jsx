@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../ui/Icon.jsx'
-import PillIllustration from '../illustrations/PillIllustration.jsx'
+import PillIllustration from './PillIllustration.jsx'
 
 function canCreateObjectUrl() {
   return typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
