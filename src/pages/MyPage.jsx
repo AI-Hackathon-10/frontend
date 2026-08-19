@@ -5,13 +5,17 @@ import Icon from '../components/ui/Icon.jsx'
 import SymptomDocumentModal from '../components/user/SymptomDocumentModal.jsx'
 import SymptomReportCard from '../components/user/SymptomReportCard.jsx'
 import { useAuth } from '../components/user/AuthProvider.jsx'
-import { SYMPTOM_REPORTS } from '../data/mockData.js'
+import { SYMPTOM_REPORTS, SYMPTOM_REPORTS_STORAGE_KEY } from '../data/mockData.js'
 
 const genderLabels = { female: '여성', male: '남성', other: '기타' }
 
 export default function MyPage() {
   const { user } = useAuth()
   const [selectedReport, setSelectedReport] = useState(null)
+  const [reports] = useState(() => {
+    const storedReports = JSON.parse(sessionStorage.getItem(SYMPTOM_REPORTS_STORAGE_KEY) ?? '[]')
+    return [...storedReports, ...SYMPTOM_REPORTS]
+  })
 
   return (
     <div className="page page--account page--mypage">
@@ -39,11 +43,11 @@ export default function MyPage() {
       <section className="account-section" aria-labelledby="reports-title">
         <div className="section-heading section-heading--tight">
           <div><span className="eyebrow">증상 문서화</span><h2 id="reports-title">증상 기록 리포트</h2></div>
-          <Badge tone="blue">{SYMPTOM_REPORTS.length}건</Badge>
+          <Badge tone="blue">{reports.length}건</Badge>
         </div>
         <p className="account-section__description">리포트를 누르면 의료진에게 전달할 문서 이미지를 확인할 수 있어요.</p>
         <div className="symptom-report-list">
-          {SYMPTOM_REPORTS.map((report) => <SymptomReportCard key={report.id} onSelect={setSelectedReport} report={report} />)}
+          {reports.map((report) => <SymptomReportCard key={report.id} onSelect={setSelectedReport} report={report} />)}
         </div>
       </section>
 
