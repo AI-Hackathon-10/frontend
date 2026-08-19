@@ -49,7 +49,7 @@ describe('app shell routing contract', () => {
     ['/', '오늘의 알약 케어'],
     ['/identify/image', '사진으로 알약 정보 찾기'],
     ['/identify/shape', '알약 외형으로 찾기'],
-    ['/search/results', '검색 결과'],
+    ['/search/results', '판별 결과'],
     ['/drugs/prime-tablet', '프리메정'],
     ['/symptoms', '증상 기록'],
     ['/facilities', '가까운 응급의료기관'],
@@ -102,10 +102,10 @@ describe('app shell routing contract', () => {
     fireEvent.click(screen.getByRole('button', { name: '발열', exact: true }))
     fireEvent.click(screen.getByRole('button', { name: '알약 찾기', exact: true }))
 
-    expect(screen.getByRole('heading', { name: '검색 결과' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '판별 결과' })).toBeInTheDocument()
     expect(screen.getByText('발열', { exact: true })).toBeInTheDocument()
     expect(screen.getByText('프리메정', { exact: true })).toBeInTheDocument()
-    expect(screen.getByText('사용기한 확인 불가', { exact: true })).toBeInTheDocument()
+    expect(screen.getByText('유효기간 확인 불가', { exact: true })).toBeInTheDocument()
   })
 
   it('opens image source choices from the example image area', () => {
@@ -167,17 +167,16 @@ describe('app shell routing contract', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: '복용하기', exact: true }))
-    expect(screen.getByRole('dialog', { name: '복용 전 확인해주세요' })).toBeInTheDocument()
-    expect(screen.getByText('현재 알약의 사용기한을 확인할 수 없습니다.')).toBeInTheDocument()
-    expect(screen.getByText('AI가 식별한 의약품 정보는 실제 제품과 다를 수 있습니다.')).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: '유효기간을 확인할 수 없어요' })).toBeInTheDocument()
+    expect(screen.getByText('유효기간을 확인할 수 없는 의약품은 복용을 권장하기 어렵습니다. 복용 전 의사 또는 약사에게 확인해주세요.')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '취소', exact: true }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByText('두통 증상으로 기록')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '복용하기', exact: true }))
-    fireEvent.click(screen.getByRole('button', { name: '확인 후 복용 기록', exact: true }))
-    expect(screen.getByRole('status')).toHaveTextContent('복용 기록이 저장되었습니다')
+    fireEvent.click(screen.getByRole('button', { name: '그래도 기록하기', exact: true }))
+    expect(screen.getByText('목업 복용 기록')).toBeInTheDocument()
   })
 
   it.each(['/', '/identify/image', '/identify/shape', '/search/results', '/drugs/prime-tablet', '/symptoms', '/facilities'])(

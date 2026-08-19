@@ -4,7 +4,7 @@ import GlobalNav from './GlobalNav.jsx'
 
 function RouteProgress() {
   const { pathname } = useLocation()
-  const isFeature = pathname !== '/'
+  const isFeature = pathname !== '/' && pathname !== '/search/results'
 
   return (
     <div className="route-progress" aria-hidden="true">

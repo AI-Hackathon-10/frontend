@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader.jsx'
 import Icon from '../components/ui/Icon.jsx'
 import Button from '../components/ui/Button.jsx'
-import SymptomSelector from '../components/identify/SymptomSelector.jsx'
-import UploadCard from '../components/identify/UploadCard.jsx'
+import SymptomSelector from '../components/drugs/SymptomSelector.jsx'
+import UploadCard from '../components/drugs/UploadCard.jsx'
 import { SYMPTOM_OPTIONS } from '../data/mockData.js'
 
 export default function ImageIdentifyPage() {
@@ -12,7 +12,7 @@ export default function ImageIdentifyPage() {
   const [selectedSymptoms, setSelectedSymptoms] = useState([])
   const [, setUploads] = useState({ front: null, back: null })
 
-  const toggleSymptom = (symptom) => {
+  const handleToggleSymptom = (symptom) => {
     setSelectedSymptoms((current) => (
       current.includes(symptom)
         ? current.filter((item) => item !== symptom)
@@ -48,7 +48,7 @@ export default function ImageIdentifyPage() {
         <Icon name="alert" size={18} />
       </section>
 
-      <SymptomSelector options={SYMPTOM_OPTIONS} selected={selectedSymptoms} onToggle={toggleSymptom} />
+      <SymptomSelector options={SYMPTOM_OPTIONS} selected={selectedSymptoms} onToggle={handleToggleSymptom} />
 
       <section aria-labelledby="captured-title" className="capture-section identify-upload-section">
         <div className="section-heading section-heading--tight">

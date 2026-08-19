@@ -12,11 +12,12 @@ export const DRUGS = [
     imprintFront: 'PM',
     imprintBack: '|',
     imageVariant: 'pink',
+    similarity: 94,
     effect: '통증과 열감을 완화하는 데 참고할 수 있는 의약품 정보입니다.',
     usage: '복용 전 제품 설명서와 의사·약사의 안내를 확인하세요.',
     cautions: ['운전·기계조작 전 주의가 필요한 성분이 포함될 수 있습니다.', '개인의 상태에 따라 복용 방법이 달라질 수 있습니다.'],
     cautionTags: ['운전/기계조작', '졸음', '어지러움'],
-    expiryStatus: '사용기한 확인 불가',
+    expirationStatus: 'unknown',
   },
   {
     id: 'opm-capsule',
@@ -35,6 +36,7 @@ export const DRUGS = [
     usage: '증상과 복용 이력에 따라 전문가와 상담해 사용하세요.',
     cautions: ['장기간 복용이 필요한 경우 전문가의 상담이 필요합니다.'],
     cautionTags: ['복용 전 상담', '개인차'],
+    expirationStatus: 'valid',
   },
   {
     id: 'youngpoong-capsule',
@@ -53,6 +55,7 @@ export const DRUGS = [
     usage: '복용 여부와 용량은 의료진의 처방 및 안내를 따라야 합니다.',
     cautions: ['임의로 복용을 시작하거나 중단하지 마세요.'],
     cautionTags: ['처방 확인', '전문가 상담'],
+    expirationStatus: 'expired',
   },
 ]
 
@@ -97,8 +100,24 @@ export const SYMPTOM_OPTIONS = [
 ]
 
 export const DEMO_IDENTIFY_RESULT = {
+  status: 'success',
   drugId: 'prime-tablet',
   symptoms: ['두통', '발열'],
+}
+
+export const MOCK_MEDICATION_RECORDS = {
+  'prime-tablet': [
+    { id: 'dose-prime-1', takenAt: '2026-08-19T14:30:00+09:00', note: '두통 증상으로 기록' },
+  ],
+  'opm-capsule': [
+    { id: 'dose-opm-1', takenAt: '2026-08-18T21:10:00+09:00', note: '저녁 복용 기록' },
+  ],
+}
+
+export const EXPIRATION_STATUS = {
+  valid: { label: '유효기간 확인됨', tone: 'valid' },
+  unknown: { label: '유효기간 확인 불가', tone: 'unknown' },
+  expired: { label: '유효기간 경과', tone: 'expired' },
 }
 
 export const DEMO_SYMPTOM_NOTE = {
