@@ -7,6 +7,8 @@ import SearchResultsPage from './pages/SearchResultsPage.jsx'
 import ShapeSearchPage from './pages/ShapeSearchPage.jsx'
 import SymptomPage from './pages/SymptomPage.jsx'
 import DrugDetailPage from './pages/DrugDetailPage.jsx'
+import LoginPage from './pages/LoginPage.jsx'
+import SignupPage from './pages/SignupPage.jsx'
 
 export default function App() {
   return (
@@ -19,6 +21,8 @@ export default function App() {
         <Route path="/drugs/:drugId" element={<DrugDetailPage />} />
         <Route path="/symptoms" element={<SymptomPage />} />
         <Route path="/facilities" element={<FacilitiesPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

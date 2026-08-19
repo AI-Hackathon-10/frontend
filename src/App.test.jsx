@@ -203,3 +203,75 @@ describe('app shell routing contract', () => {
     expect(screen.queryByRole('button', { name: '전화', exact: true })).not.toBeInTheDocument()
   })
 })
+
+describe('authentication pages', () => {
+  it('renders the login form with an account creation link', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument()
+    expect(screen.getByLabelText('아이디')).toHaveAttribute('autocomplete', 'username')
+    expect(screen.getByLabelText('비밀번호')).toHaveAttribute('autocomplete', 'current-password')
+    expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute('href', '/signup')
+  })
+
+  it('renders all requested signup fields', () => {
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('heading', { name: '회원가입' })).toBeInTheDocument()
+    expect(screen.getByLabelText('성별')).toBeInTheDocument()
+    expect(screen.getByLabelText('생년월일')).toHaveAttribute('type', 'date')
+    expect(screen.getByLabelText('이름')).toBeInTheDocument()
+    expect(screen.getByLabelText('아이디')).toHaveAttribute('autocomplete', 'username')
+    expect(screen.getByLabelText('비밀번호')).toHaveAttribute('autocomplete', 'new-password')
+    expect(screen.getByLabelText('비밀번호 확인')).toHaveAttribute('autocomplete', 'new-password')
+  })
+
+  it('redirects to login with a mock completion state after valid signup', () => {
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('성별'), { target: { value: 'female' } })
+    fireEvent.change(screen.getByLabelText('생년월일'), { target: { value: '1998-04-12' } })
+    fireEvent.change(screen.getByLabelText('이름'), { target: { value: '홍길동' } })
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'safe-password' } })
+    fireEvent.change(screen.getByLabelText('비밀번호 확인'), { target: { value: 'safe-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '회원가입 완료' }))
+
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('회원가입이 완료되었습니다')
+    expect(screen.getByLabelText('아이디')).toHaveValue('pill-user')
+  })
+
+  it('keeps the signup action disabled until required values are complete', () => {
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('button', { name: '회원가입 완료' })).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('성별'), { target: { value: 'male' } })
+    fireEvent.change(screen.getByLabelText('생년월일'), { target: { value: '1998-04-12' } })
+    fireEvent.change(screen.getByLabelText('이름'), { target: { value: '홍길동' } })
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'safe-password' } })
+
+    expect(screen.getByRole('button', { name: '회원가입 완료' })).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('비밀번호 확인'), { target: { value: 'safe-password' } })
+    expect(screen.getByRole('button', { name: '회원가입 완료' })).toBeEnabled()
+  })
+})
