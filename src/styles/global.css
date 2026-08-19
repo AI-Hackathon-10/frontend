@@ -243,24 +243,6 @@ svg {
   display: none;
 }
 
-.route-progress {
-  height: 2px;
-  overflow: hidden;
-  background: transparent;
-}
-
-.route-progress span {
-  display: block;
-  width: 0;
-  height: 100%;
-  background: linear-gradient(90deg, var(--mint), var(--primary));
-  transition: width 260ms ease;
-}
-
-.route-progress span.is-visible {
-  width: 34%;
-}
-
 .page-scroll {
   flex: 1;
   overflow: auto;
