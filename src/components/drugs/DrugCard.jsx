@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import Icon from '../ui/Icon.jsx'
-import PillIllustration from '../illustrations/PillIllustration.jsx'
+import PillIllustration from './PillIllustration.jsx'
 import Badge from '../ui/Badge.jsx'
 
 export default function DrugCard({ drug, compact = false }) {
