@@ -35,7 +35,6 @@ describe('app shell routing contract', () => {
 
     expect(screen.getByText('한국프라임제약(주)')).toBeInTheDocument()
     expect(screen.getByText('[M214134] 덱시부프로펜')).toBeInTheDocument()
-
   })
 
   it.each([
@@ -185,4 +184,199 @@ describe('app shell routing contract', () => {
     },
   )
 
+})
+
+describe('authentication pages', () => {
+  it('renders the login form with an account creation link', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument()
+    expect(screen.getByLabelText('아이디')).toHaveAttribute('autocomplete', 'username')
+    expect(screen.getByLabelText('비밀번호')).toHaveAttribute('autocomplete', 'current-password')
+    expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute('href', '/signup')
+  })
+
+  it('renders all requested signup fields', () => {
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('heading', { name: '회원가입' })).toBeInTheDocument()
+    expect(screen.getByLabelText('성별')).toBeInTheDocument()
+    expect(screen.getByLabelText('생년월일')).toHaveAttribute('type', 'date')
+    expect(screen.getByLabelText('이름')).toBeInTheDocument()
+    expect(screen.getByLabelText('아이디')).toHaveAttribute('autocomplete', 'username')
+    expect(screen.getByLabelText('비밀번호')).toHaveAttribute('autocomplete', 'new-password')
+    expect(screen.getByLabelText('비밀번호 확인')).toHaveAttribute('autocomplete', 'new-password')
+  })
+
+  it('redirects to login with a mock completion state after valid signup', () => {
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('성별'), { target: { value: 'female' } })
+    fireEvent.change(screen.getByLabelText('생년월일'), { target: { value: '1998-04-12' } })
+    fireEvent.change(screen.getByLabelText('이름'), { target: { value: '홍길동' } })
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'safe-password' } })
+    fireEvent.change(screen.getByLabelText('비밀번호 확인'), { target: { value: 'safe-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '회원가입 완료' }))
+
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('회원가입이 완료되었습니다')
+    expect(screen.getByLabelText('아이디')).toHaveValue('pill-user')
+  })
+
+  it('keeps the signup action disabled until required values are complete', () => {
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('button', { name: '회원가입 완료' })).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('성별'), { target: { value: 'male' } })
+    fireEvent.change(screen.getByLabelText('생년월일'), { target: { value: '1998-04-12' } })
+    fireEvent.change(screen.getByLabelText('이름'), { target: { value: '홍길동' } })
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'safe-password' } })
+
+    expect(screen.getByRole('button', { name: '회원가입 완료' })).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('비밀번호 확인'), { target: { value: 'safe-password' } })
+    expect(screen.getByRole('button', { name: '회원가입 완료' })).toBeEnabled()
+  })
+
+  it('moves to the pill-care home and exposes the user menu after login', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+
+    expect(screen.getByRole('heading', { name: '오늘의 알약 케어' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '내 메뉴' })).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('opens the three account destinations from the user menu', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+
+    expect(screen.getByRole('link', { name: '마이페이지' })).toHaveAttribute('href', '/mypage')
+    expect(screen.getByRole('link', { name: '비밀번호 수정' })).toHaveAttribute('href', '/password')
+    expect(screen.getByRole('button', { name: '로그아웃' })).toBeInTheDocument()
+  })
+
+  it('shows symptom report cards and opens the selected document image', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+    fireEvent.click(screen.getByRole('link', { name: '마이페이지' }))
+
+    expect(screen.getByRole('heading', { name: '마이페이지' })).toBeInTheDocument()
+    const reportCard = screen.getByRole('button', { name: /두통.*발열/ })
+    expect(reportCard).toBeInTheDocument()
+
+    fireEvent.click(reportCard)
+
+    expect(screen.getByRole('dialog', { name: '증상 기록 문서 보기' })).toBeInTheDocument()
+    expect(screen.getByAltText('증상 기록 문서')).toHaveAttribute('src', 'https://example.com/presigned/symptom-report-1.png')
+  })
+
+  it('requires the current password before showing a password change success state', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+    fireEvent.click(screen.getByRole('link', { name: '비밀번호 수정' }))
+
+    expect(screen.getByRole('heading', { name: '비밀번호 수정' })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('현재 비밀번호'), { target: { value: 'wrong-password' } })
+    fireEvent.change(screen.getByLabelText('새 비밀번호'), { target: { value: 'new-password' } })
+    fireEvent.change(screen.getByLabelText('새 비밀번호 확인'), { target: { value: 'new-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '비밀번호 변경' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent('현재 비밀번호가 일치하지 않습니다')
+
+    fireEvent.change(screen.getByLabelText('현재 비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '비밀번호 변경' }))
+    expect(screen.getByRole('status')).toHaveTextContent('비밀번호가 변경되었습니다')
+  })
+
+  it('closes the logout confirmation without logging out when cancelled or dismissed', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))
+
+    expect(screen.getByRole('dialog', { name: '로그아웃 확인' })).toBeInTheDocument()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: '로그아웃 확인' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '오늘의 알약 케어' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))
+    fireEvent.click(screen.getByRole('button', { name: '아니오' }))
+    expect(screen.queryByRole('dialog', { name: '로그아웃 확인' })).not.toBeInTheDocument()
+  })
+
+  it('logs out and returns to login after confirming the modal', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))
+    fireEvent.click(screen.getByRole('button', { name: '확인' }))
+
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '내 메뉴' })).not.toBeInTheDocument()
+  })
 })
