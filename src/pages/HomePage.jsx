@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import Icon from '../components/ui/Icon.jsx'
 import Badge from '../components/ui/Badge.jsx'
-import PillIllustration from '../components/illustrations/PillIllustration.jsx'
+import PillIllustration from '../components/drugs/PillIllustration.jsx'
 import SearchBar from '../components/drugs/SearchBar.jsx'
 
 const quickActions = [
@@ -46,7 +46,6 @@ export default function HomePage() {
 
       <section className="support-grid" aria-label="도움 기능">
         <Link className="support-card support-card--mint" to="/symptoms"><span className="support-card__icon"><Icon name="notes" size={21} /></span><span><strong>증상 기록하기</strong><small>지금 상태를 정리해요</small></span><Icon name="chevronRight" size={17} /></Link>
-        <Link className="support-card support-card--lavender" to="/facilities"><span className="support-card__icon"><Icon name="emergency" size={21} /></span><span><strong>응급실 찾기</strong><small>가까운 기관을 확인해요</small></span><Icon name="chevronRight" size={17} /></Link>
       </section>
 
       <aside className="reference-note"><Icon name="shield" size={18} /><p>본 서비스의 정보는 참고용입니다. 복용 전 반드시 의사·약사와 상담하세요.</p></aside>

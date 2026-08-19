@@ -1,21 +1,13 @@
 import { Link, useLocation } from 'react-router-dom'
 import Icon from '../ui/Icon.jsx'
 import GlobalNav from './GlobalNav.jsx'
-
-function RouteProgress() {
-  const { pathname } = useLocation()
-  const isFeature = pathname !== '/'
-
-  return (
-    <div className="route-progress" aria-hidden="true">
-      <span className={isFeature ? 'is-visible' : ''} />
-    </div>
-  )
-}
+import UserMenu from '../user/UserMenu.jsx'
+import { useAuth } from '../user/AuthProvider.jsx'
 
 export default function AppShell({ children }) {
   const { pathname } = useLocation()
   const isAuthRoute = pathname === '/login' || pathname === '/signup'
+  const { user } = useAuth()
 
   return (
     <div className="site-background">
@@ -31,7 +23,10 @@ export default function AppShell({ children }) {
             </span>
           </Link>
           <GlobalNav />
-          <div className="header-status"><span className="status-dot" /> 참고용 정보 서비스</div>
+          <div className="header-actions">
+            <div className="header-status"><span className="status-dot" /> 참고용 정보 서비스</div>
+            {user ? <UserMenu /> : null}
+          </div>
         </header>
 
         <header className="mobile-header">
@@ -42,7 +37,6 @@ export default function AppShell({ children }) {
           <span className="mobile-header__status"><Icon name="shield" size={17} /> 참고용</span>
         </header>
 
-        <RouteProgress />
         <main className="page-scroll">
           <div className="page-content">{children}</div>
         </main>

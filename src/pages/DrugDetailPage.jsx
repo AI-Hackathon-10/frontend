@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Icon from '../components/ui/Icon.jsx'
-import PillIllustration from '../components/illustrations/PillIllustration.jsx'
+import PillIllustration from '../components/drugs/PillIllustration.jsx'
 import DrugInfoTable from '../components/drugs/DrugInfoTable.jsx'
 import SafetySection from '../components/drugs/SafetySection.jsx'
 import { getDrugById } from '../data/mockData.js'
@@ -18,7 +18,6 @@ export default function DrugDetailPage() {
       <section className="detail-section" aria-labelledby="basic-info-title"><div className="section-heading"><div><span className="eyebrow">한눈에 보기</span><h2 id="basic-info-title">기본 정보</h2></div><Icon name="pill" size={22} /></div><DrugInfoTable drug={drug} /></section>
       <section className="detail-section detail-section--soft" aria-labelledby="usage-title"><div className="section-heading section-heading--tight"><div><span className="eyebrow">공식 정보 연결 예정</span><h2 id="usage-title">효능·사용 참고</h2></div><Icon name="notes" size={22} /></div><p className="detail-copy">{drug.effect}</p><p className="detail-copy detail-copy--muted">{drug.usage}</p></section>
       <SafetySection drug={drug} />
-      <Link className="button button--outline button--wide" to="/facilities"><Icon name="emergency" size={18} /><span>도움이 필요하면 응급실 확인하기</span><Icon className="button__trailing" name="arrowRight" size={18} /></Link>
       <p className="page-footnote"><Icon name="alert" size={15} /> 약품 정보는 참고용이며, 실제 복용 판단은 의료진과 상담하세요.</p>
     </div>
   )

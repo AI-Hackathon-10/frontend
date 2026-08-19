@@ -1,20 +1,23 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AuthField from '../components/user/AuthField.jsx'
 import AuthPageLayout from '../components/user/AuthPageLayout.jsx'
+import { useAuth } from '../components/user/AuthProvider.jsx'
 import Icon from '../components/ui/Icon.jsx'
 
 export default function LoginPage() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { login } = useAuth()
   const [userId, setUserId] = useState(location.state?.registeredId ?? '')
   const [password, setPassword] = useState('')
-  const [loginMessage, setLoginMessage] = useState('')
   const canSubmit = Boolean(userId.trim() && password)
 
   const handleSubmit = (event) => {
     event.preventDefault()
     if (!canSubmit) return
-    setLoginMessage('로그인 API 연결 전 목업 화면입니다. 입력한 정보는 저장되지 않습니다.')
+    login({ id: userId.trim(), password })
+    navigate('/', { replace: true })
   }
 
   return (
@@ -54,7 +57,6 @@ export default function LoginPage() {
         </button>
       </form>
 
-      {loginMessage ? <p className="auth-feedback" role="status">{loginMessage}</p> : null}
       <p className="auth-form__note">현재는 화면 흐름만 제공하며 실제 인증은 추후 Spring Boot API와 연결됩니다.</p>
     </AuthPageLayout>
   )

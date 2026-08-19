@@ -15,17 +15,18 @@ describe('app shell routing contract', () => {
     expect(screen.queryByText('최근 확인한 약품')).not.toBeInTheDocument()
   })
 
-  it('exposes the emergency facility destination from the primary navigation', () => {
+  it('does not expose the removed emergency facility destination', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
       </MemoryRouter>,
     )
 
-    expect(screen.getAllByRole('link', { name: '응급실' }).every((link) => link.getAttribute('href') === '/facilities')).toBe(true)
+    expect(screen.queryByRole('link', { name: '응급실' })).not.toBeInTheDocument()
+    expect(screen.queryByText('응급실 찾기')).not.toBeInTheDocument()
   })
 
-  it('renders example drug and facility records', () => {
+  it('renders example drug records', () => {
     render(
       <MemoryRouter initialEntries={['/drugs/prime-tablet']}>
         <App />
@@ -34,25 +35,15 @@ describe('app shell routing contract', () => {
 
     expect(screen.getByText('한국프라임제약(주)')).toBeInTheDocument()
     expect(screen.getByText('[M214134] 덱시부프로펜')).toBeInTheDocument()
-
-    render(
-      <MemoryRouter initialEntries={['/facilities']}>
-        <App />
-      </MemoryRouter>,
-    )
-
-    expect(screen.getByText('성남중앙응급의료센터')).toBeInTheDocument()
-    expect(screen.getByText('분당새봄병원 응급실')).toBeInTheDocument()
   })
 
   it.each([
     ['/', '오늘의 알약 케어'],
     ['/identify/image', '사진으로 알약 정보 찾기'],
     ['/identify/shape', '알약 외형으로 찾기'],
-    ['/search/results', '검색 결과'],
+    ['/search/results', '판별 결과'],
     ['/drugs/prime-tablet', '프리메정'],
     ['/symptoms', '증상 기록'],
-    ['/facilities', '가까운 응급의료기관'],
   ])('renders the expected heading for %s', (route, heading) => {
     render(
       <MemoryRouter initialEntries={[route]}>
@@ -61,21 +52,21 @@ describe('app shell routing contract', () => {
     )
 
     expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument()
+    expect(document.querySelector('.route-progress')).not.toBeInTheDocument()
   })
 
-  it('renders twenty symptoms and keeps the search action disabled until one is selected', () => {
+  it('shows primary symptoms first and keeps the search action disabled until one is selected', () => {
     render(
       <MemoryRouter initialEntries={['/identify/image']}>
         <App />
       </MemoryRouter>,
     )
 
-    const symptomButtons = [
-      '두통', '발열', '기침', '인후통', '콧물', '코막힘', '복통', '소화불량', '설사', '변비',
-      '속쓰림', '구토/메스꺼움', '근육통', '생리통', '치통', '알레르기', '피부 가려움', '몸살', '어지러움', '오한',
-    ]
+    const symptomButtons = ['두통', '발열', '기침', '콧물·코막힘', '인후통', '복통', '소화불량·속쓰림', '설사']
 
-    expect(symptomButtons).toHaveLength(20)
+    expect(symptomButtons).toHaveLength(8)
+    expect(screen.queryByRole('link', { name: '이전 화면으로 이동' })).not.toBeInTheDocument()
+    expect(screen.getByText('AI 판별 결과는 참고용이며, 사진은 서버에 저장되지 않습니다.')).toHaveClass('page-footnote')
     symptomButtons.forEach((symptom) => {
       expect(screen.getByRole('button', { name: symptom, exact: true })).toBeInTheDocument()
     })
@@ -85,11 +76,32 @@ describe('app shell routing contract', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '두통', exact: true }))
     expect(screen.getByRole('button', { name: '두통', exact: true })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: '다른 증상 찾기', exact: true })).toBeInTheDocument()
     expect(searchButton).toBeEnabled()
 
     fireEvent.click(screen.getByRole('button', { name: '두통', exact: true }))
     expect(screen.getByRole('button', { name: '두통', exact: true })).toHaveAttribute('aria-pressed', 'false')
     expect(searchButton).toBeDisabled()
+  })
+
+  it('selects multiple symptoms from categorized symptom sheet', () => {
+    render(
+      <MemoryRouter initialEntries={['/identify/image']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '다른 증상 찾기', exact: true }))
+    expect(screen.getByRole('dialog', { name: '증상 선택' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '감기·호흡기' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '피부' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '재채기', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '발진', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '선택 완료', exact: true }))
+
+    expect(screen.getByRole('button', { name: '재채기 삭제', exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '발진 삭제', exact: true })).toBeInTheDocument()
   })
 
   it('passes selected symptoms into the mock result screen', () => {
@@ -102,10 +114,10 @@ describe('app shell routing contract', () => {
     fireEvent.click(screen.getByRole('button', { name: '발열', exact: true }))
     fireEvent.click(screen.getByRole('button', { name: '알약 찾기', exact: true }))
 
-    expect(screen.getByRole('heading', { name: '검색 결과' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '판별 결과' })).toBeInTheDocument()
     expect(screen.getByText('발열', { exact: true })).toBeInTheDocument()
     expect(screen.getByText('프리메정', { exact: true })).toBeInTheDocument()
-    expect(screen.getByText('사용기한 확인 불가', { exact: true })).toBeInTheDocument()
+    expect(screen.getByText('유효기간 확인 불가', { exact: true })).toBeInTheDocument()
   })
 
   it('opens image source choices from the example image area', () => {
@@ -116,15 +128,41 @@ describe('app shell routing contract', () => {
     )
 
     expect(screen.queryByRole('button', { name: '촬영하기', exact: true })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '앨범에서 선택하기', exact: true })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '파일 탐색기에서 선택하기', exact: true })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '사진 보관함에서 선택하기', exact: true })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '파일에서 선택하기', exact: true })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /사진 선택|사진 바꾸기/ })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '앞면 이미지 선택 영역', exact: true }))
 
+    expect(screen.getByRole('dialog', { name: '사진 추가' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '촬영하기', exact: true })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '앨범에서 선택하기', exact: true })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '파일 탐색기에서 선택하기', exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '사진 보관함에서 선택하기', exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '파일에서 선택하기', exact: true })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '취소', exact: true }))
+    expect(screen.queryByRole('dialog', { name: '사진 추가' })).not.toBeInTheDocument()
+  })
+
+  it('adds pill photo sets at the end and only allows added sets to be removed', () => {
+    render(
+      <MemoryRouter initialEntries={['/identify/image']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('heading', { name: '알약 1', exact: true })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '알약 1 삭제', exact: true })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: '알약 추가', exact: true })).toHaveLength(1)
+
+    fireEvent.click(screen.getByRole('button', { name: '알약 추가', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '알약 추가', exact: true }))
+
+    expect(screen.getByRole('heading', { name: '알약 2', exact: true })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '알약 3', exact: true })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: '알약 추가', exact: true })).toHaveLength(1)
+
+    fireEvent.click(screen.getByRole('button', { name: '알약 2 삭제', exact: true }))
+    expect(screen.queryByRole('heading', { name: '알약 3', exact: true })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { name: '알약 2', exact: true })).toHaveLength(1)
   })
 
   it('previews and removes locally selected pill photos', () => {
@@ -145,7 +183,7 @@ describe('app shell routing contract', () => {
 
       const file = new File(['pill-image'], 'front.png', { type: 'image/png' })
       fireEvent.click(screen.getByRole('button', { name: '앞면 이미지 선택 영역', exact: true }))
-      fireEvent.change(screen.getByLabelText('앞면 앨범에서 선택하기'), { target: { files: [file] } })
+      fireEvent.change(screen.getByLabelText('앞면 사진 보관함에서 선택하기'), { target: { files: [file] } })
 
       expect(screen.getByAltText('앞면 업로드 미리보기')).toHaveAttribute('src', 'blob:front-preview')
       expect(createObjectURL).toHaveBeenCalledWith(file)
@@ -153,6 +191,12 @@ describe('app shell routing contract', () => {
       fireEvent.click(screen.getByRole('button', { name: '앞면 사진 삭제', exact: true }))
       expect(screen.queryByAltText('앞면 업로드 미리보기')).not.toBeInTheDocument()
       expect(revokeObjectURL).toHaveBeenCalledWith('blob:front-preview')
+
+      fireEvent.drop(screen.getByRole('button', { name: '앞면 이미지 선택 영역', exact: true }), {
+        dataTransfer: { files: [file] },
+      })
+      expect(screen.getByAltText('앞면 업로드 미리보기')).toHaveAttribute('src', 'blob:front-preview')
+      expect(createObjectURL).toHaveBeenCalledTimes(2)
     } finally {
       Object.defineProperty(URL, 'createObjectURL', { configurable: true, value: originalCreateObjectURL })
       Object.defineProperty(URL, 'revokeObjectURL', { configurable: true, value: originalRevokeObjectURL })
@@ -167,20 +211,19 @@ describe('app shell routing contract', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: '복용하기', exact: true }))
-    expect(screen.getByRole('dialog', { name: '복용 전 확인해주세요' })).toBeInTheDocument()
-    expect(screen.getByText('현재 알약의 사용기한을 확인할 수 없습니다.')).toBeInTheDocument()
-    expect(screen.getByText('AI가 식별한 의약품 정보는 실제 제품과 다를 수 있습니다.')).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: '유효기간을 확인할 수 없어요' })).toBeInTheDocument()
+    expect(screen.getByText('유효기간을 확인할 수 없는 의약품은 복용을 권장하기 어렵습니다. 복용 전 의사 또는 약사에게 확인해주세요.')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '취소', exact: true }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByText('두통 증상으로 기록')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '복용하기', exact: true }))
-    fireEvent.click(screen.getByRole('button', { name: '확인 후 복용 기록', exact: true }))
-    expect(screen.getByRole('status')).toHaveTextContent('복용 기록이 저장되었습니다')
+    fireEvent.click(screen.getByRole('button', { name: '그래도 기록하기', exact: true }))
+    expect(screen.getByText('목업 복용 기록')).toBeInTheDocument()
   })
 
-  it.each(['/', '/identify/image', '/identify/shape', '/search/results', '/drugs/prime-tablet', '/symptoms', '/facilities'])(
+  it.each(['/', '/identify/image', '/identify/shape', '/search/results', '/drugs/prime-tablet', '/symptoms'])(
     'does not expose the removed emergency call CTA on %s',
     (route) => {
       render(
@@ -193,14 +236,200 @@ describe('app shell routing contract', () => {
     },
   )
 
-  it('does not render a phone action in facility cards', () => {
+})
+
+describe('authentication pages', () => {
+  it('renders the login form with an account creation link', () => {
     render(
-      <MemoryRouter initialEntries={['/facilities']}>
+      <MemoryRouter initialEntries={['/login']}>
         <App />
       </MemoryRouter>,
     )
 
-    expect(screen.queryByRole('button', { name: '전화', exact: true })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument()
+    expect(screen.getByLabelText('아이디')).toHaveAttribute('autocomplete', 'username')
+    expect(screen.getByLabelText('비밀번호')).toHaveAttribute('autocomplete', 'current-password')
+    expect(screen.getByRole('link', { name: '회원가입' })).toHaveAttribute('href', '/signup')
+  })
+
+  it('renders all requested signup fields', () => {
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('heading', { name: '회원가입' })).toBeInTheDocument()
+    expect(screen.getByLabelText('성별')).toBeInTheDocument()
+    expect(screen.getByLabelText('생년월일')).toHaveAttribute('type', 'date')
+    expect(screen.getByLabelText('이름')).toBeInTheDocument()
+    expect(screen.getByLabelText('아이디')).toHaveAttribute('autocomplete', 'username')
+    expect(screen.getByLabelText('비밀번호')).toHaveAttribute('autocomplete', 'new-password')
+    expect(screen.getByLabelText('비밀번호 확인')).toHaveAttribute('autocomplete', 'new-password')
+  })
+
+  it('redirects to login with a mock completion state after valid signup', () => {
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('성별'), { target: { value: 'female' } })
+    fireEvent.change(screen.getByLabelText('생년월일'), { target: { value: '1998-04-12' } })
+    fireEvent.change(screen.getByLabelText('이름'), { target: { value: '홍길동' } })
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'safe-password' } })
+    fireEvent.change(screen.getByLabelText('비밀번호 확인'), { target: { value: 'safe-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '회원가입 완료' }))
+
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('회원가입이 완료되었습니다')
+    expect(screen.getByLabelText('아이디')).toHaveValue('pill-user')
+  })
+
+  it('keeps the signup action disabled until required values are complete', () => {
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('button', { name: '회원가입 완료' })).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('성별'), { target: { value: 'male' } })
+    fireEvent.change(screen.getByLabelText('생년월일'), { target: { value: '1998-04-12' } })
+    fireEvent.change(screen.getByLabelText('이름'), { target: { value: '홍길동' } })
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'safe-password' } })
+
+    expect(screen.getByRole('button', { name: '회원가입 완료' })).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('비밀번호 확인'), { target: { value: 'safe-password' } })
+    expect(screen.getByRole('button', { name: '회원가입 완료' })).toBeEnabled()
+  })
+
+  it('moves to the pill-care home and exposes the user menu after login', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+
+    expect(screen.getByRole('heading', { name: '오늘의 알약 케어' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '내 메뉴' })).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('opens the three account destinations from the user menu', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+
+    expect(screen.getByRole('link', { name: '마이페이지' })).toHaveAttribute('href', '/mypage')
+    expect(screen.getByRole('link', { name: '비밀번호 수정' })).toHaveAttribute('href', '/password')
+    expect(screen.getByRole('button', { name: '로그아웃' })).toBeInTheDocument()
+  })
+
+  it('shows symptom report cards and opens the selected document image', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+    fireEvent.click(screen.getByRole('link', { name: '마이페이지' }))
+
+    expect(screen.getByRole('heading', { name: '마이페이지' })).toBeInTheDocument()
+    const reportCard = screen.getByRole('button', { name: /두통.*발열/ })
+    expect(reportCard).toBeInTheDocument()
+
+    fireEvent.click(reportCard)
+
+    expect(screen.getByRole('dialog', { name: '증상 기록 문서 보기' })).toBeInTheDocument()
+    expect(screen.getByAltText('증상 기록 문서')).toHaveAttribute('src', 'https://example.com/presigned/symptom-report-1.png')
+  })
+
+  it('requires the current password before showing a password change success state', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+    fireEvent.click(screen.getByRole('link', { name: '비밀번호 수정' }))
+
+    expect(screen.getByRole('heading', { name: '비밀번호 수정' })).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('현재 비밀번호'), { target: { value: 'wrong-password' } })
+    fireEvent.change(screen.getByLabelText('새 비밀번호'), { target: { value: 'new-password' } })
+    fireEvent.change(screen.getByLabelText('새 비밀번호 확인'), { target: { value: 'new-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '비밀번호 변경' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent('현재 비밀번호가 일치하지 않습니다')
+
+    fireEvent.change(screen.getByLabelText('현재 비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '비밀번호 변경' }))
+    expect(screen.getByRole('status')).toHaveTextContent('비밀번호가 변경되었습니다')
+  })
+
+  it('closes the logout confirmation without logging out when cancelled or dismissed', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))
+
+    expect(screen.getByRole('dialog', { name: '로그아웃 확인' })).toBeInTheDocument()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: '로그아웃 확인' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '오늘의 알약 케어' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))
+    fireEvent.click(screen.getByRole('button', { name: '아니오' }))
+    expect(screen.queryByRole('dialog', { name: '로그아웃 확인' })).not.toBeInTheDocument()
+  })
+
+  it('logs out and returns to login after confirming the modal', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))
+    fireEvent.click(screen.getByRole('button', { name: '확인' }))
+
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '내 메뉴' })).not.toBeInTheDocument()
   })
 })
 
