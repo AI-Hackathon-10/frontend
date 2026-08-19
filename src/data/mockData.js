@@ -59,37 +59,11 @@ export const DRUGS = [
   },
 ]
 
-export const FACILITIES = [
-  {
-    id: 'seongnam-emergency',
-    name: '성남중앙응급의료센터',
-    type: '응급의료기관',
-    distance: '1.8km',
-    address: '경기도 성남시 분당구 중앙로 48',
-    phone: '031-000-1199',
-    status: '진료 가능 여부 확인 필요',
-    mapPosition: { left: '51%', top: '46%' },
-  },
-  {
-    id: 'bundang-medical-center',
-    name: '분당새봄병원 응급실',
-    type: '응급의료기관',
-    distance: '2.6km',
-    address: '경기도 성남시 분당구 돌마로 72',
-    phone: '031-000-8272',
-    status: '24시간 운영 정보 확인',
-    mapPosition: { left: '69%', top: '62%' },
-  },
-  {
-    id: 'pangyo-emergency',
-    name: '판교안심의료원 응급실',
-    type: '응급의료기관',
-    distance: '4.1km',
-    address: '경기도 성남시 수정구 판교로 110',
-    phone: '031-000-4110',
-    status: '진료 가능 여부 확인 필요',
-    mapPosition: { left: '30%', top: '31%' },
-  },
+export const SYMPTOM_OPTIONS = [
+  '두통', '발열', '기침', '인후통', '콧물',
+  '코막힘', '복통', '소화불량', '설사', '변비',
+  '속쓰림', '구토/메스꺼움', '근육통', '생리통', '치통',
+  '알레르기', '피부 가려움', '몸살', '어지러움', '오한',
 ]
 
 export const PRIMARY_SYMPTOMS = [
@@ -103,8 +77,6 @@ export const SYMPTOM_CATEGORIES = [
   { name: '근육·통증', symptoms: ['근육통', '관절통', '허리통증', '목통증', '어깨통증', '치통'] },
   { name: '피부', symptoms: ['가려움', '발진', '두드러기'] },
 ]
-
-export const SYMPTOM_OPTIONS = SYMPTOM_CATEGORIES.flatMap(({ symptoms }) => symptoms)
 
 export const DEMO_IDENTIFY_RESULT = {
   status: 'success',
@@ -134,6 +106,34 @@ export const DEMO_SYMPTOM_NOTE = {
   memo: '오후부터 몸이 무겁고 미열이 있는 느낌입니다.',
   summary: '오늘 오후부터 두통과 발열이 시작되었고, 증상은 중간 정도로 느껴집니다.',
 }
+
+export const MOCK_USER_PROFILE = {
+  name: '홍길동',
+  id: 'pillcare-user',
+  gender: 'undisclosed',
+  birthDate: '1995-08-19',
+}
+
+export const SYMPTOM_REPORTS = [
+  {
+    id: 'report-2026-08-19',
+    title: '두통·발열 증상 기록',
+    createdAt: '2026-08-19T14:30:00+09:00',
+    symptoms: ['두통', '발열'],
+    severity: '중간 정도',
+    summary: '오늘 오후부터 두통과 발열이 시작되었고, 증상은 중간 정도로 느껴집니다.',
+    documentImageUrl: 'https://example.com/presigned/symptom-report-1.png',
+  },
+  {
+    id: 'report-2026-08-12',
+    title: '기침·인후통 증상 기록',
+    createdAt: '2026-08-12T21:10:00+09:00',
+    symptoms: ['기침', '인후통'],
+    severity: '가벼움',
+    summary: '기침과 인후통이 가볍게 느껴지는 상태입니다.',
+    documentImageUrl: 'https://example.com/presigned/symptom-report-2.png',
+  },
+]
 
 export function getDrugById(drugId) {
   return DRUGS.find((drug) => drug.id === drugId) ?? DRUGS[0]
