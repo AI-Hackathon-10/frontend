@@ -61,3 +61,13 @@ export function getUserFromSession() {
     id: session.loginId,
   }
 }
+
+export function mapUserInfo(userInfo) {
+  return {
+    userId: userInfo.userId,
+    id: userInfo.loginId,
+    name: userInfo.name,
+    gender: userInfo.gender,
+    birthDate: userInfo.birthDate,
+  }
+}

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import AppShell from './components/layout/AppShell.jsx'
 import { AuthProvider, useAuth } from './components/user/AuthProvider.jsx'
 import HomePage from './pages/HomePage.jsx'
@@ -12,12 +12,13 @@ import MyPage from './pages/MyPage.jsx'
 import PasswordChangePage from './pages/PasswordChangePage.jsx'
 import SignupPage from './pages/SignupPage.jsx'
 
-function RequireAuth({ children }) {
-  const { user } = useAuth()
+function RequireAuth() {
+  const { user, isAuthChecked } = useAuth()
   const location = useLocation()
 
+  if (!isAuthChecked) return null
   if (!user) return <Navigate replace state={{ from: location.pathname }} to="/login" />
-  return children
+  return <Outlet />
 }
 
 export default function App() {
@@ -27,14 +28,16 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/" element={<HomePage />} />
-          <Route path="/identify/image" element={<ImageIdentifyPage />} />
-          <Route path="/identify/shape" element={<ShapeSearchPage />} />
-          <Route path="/search/results" element={<SearchResultsPage />} />
-          <Route path="/drugs/:drugId" element={<DrugDetailPage />} />
-          <Route path="/symptoms" element={<SymptomPage />} />
-          <Route path="/mypage" element={<RequireAuth><MyPage /></RequireAuth>} />
-          <Route path="/password" element={<RequireAuth><PasswordChangePage /></RequireAuth>} />
+          <Route element={<RequireAuth />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/identify/image" element={<ImageIdentifyPage />} />
+            <Route path="/identify/shape" element={<ShapeSearchPage />} />
+            <Route path="/search/results" element={<SearchResultsPage />} />
+            <Route path="/drugs/:drugId" element={<DrugDetailPage />} />
+            <Route path="/symptoms" element={<SymptomPage />} />
+            <Route path="/mypage" element={<MyPage />} />
+            <Route path="/password" element={<PasswordChangePage />} />
+          </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppShell>

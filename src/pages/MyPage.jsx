@@ -7,7 +7,7 @@ import SymptomReportCard from '../components/user/SymptomReportCard.jsx'
 import { useAuth } from '../components/user/AuthProvider.jsx'
 import { SYMPTOM_REPORTS, SYMPTOM_REPORTS_STORAGE_KEY } from '../data/mockData.js'
 
-const genderLabels = { female: '여성', male: '남성', other: '기타' }
+const genderLabels = { FEMALE: '여성', MALE: '남성' }
 
 export default function MyPage() {
   const { user } = useAuth()
@@ -31,7 +31,7 @@ export default function MyPage() {
             <span className="profile-card__avatar"><Icon name="shield" size={23} /></span>
             <div><span className="eyebrow">가입 정보</span><h2 id="profile-card-title">{user?.name ?? '사용자'}</h2></div>
           </div>
-          <Badge tone="mint">Mock profile</Badge>
+          <Badge tone="mint">인증됨</Badge>
         </div>
         <dl className="profile-card__details">
           <div><dt>아이디</dt><dd>{user?.id ?? '-'}</dd></div>

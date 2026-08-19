@@ -1,12 +1,13 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { login as loginRequest, logout as logoutRequest } from '../../api/authApi.js'
+import { login as loginRequest, logout as logoutRequest, me as meRequest } from '../../api/authApi.js'
 import { setOnSessionExpired } from '../../api/client.js'
-import { clearSession, getUserFromSession, saveSession } from '../../api/session.js'
+import { clearSession, getAccessToken, getUserFromSession, mapUserInfo, saveSession } from '../../api/session.js'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => getUserFromSession())
+  const [isAuthChecked, setIsAuthChecked] = useState(false)
   const [mockPassword, setMockPassword] = useState('')
 
   useEffect(() => {
@@ -17,10 +18,39 @@ export function AuthProvider({ children }) {
     return () => setOnSessionExpired(null)
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+
+    if (!getAccessToken()) {
+      setIsAuthChecked(true)
+      return undefined
+    }
+
+    meRequest()
+      .then((userInfo) => {
+        if (!cancelled) setUser(mapUserInfo(userInfo))
+      })
+      .catch(() => {
+        if (!cancelled) {
+          clearSession()
+          setUser(null)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsAuthChecked(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const login = async ({ id, password }) => {
     const { accessToken, refreshToken } = await loginRequest({ loginId: id, password })
     saveSession({ accessToken, refreshToken, loginId: id })
-    setUser(getUserFromSession())
+    const userInfo = await meRequest()
+    setUser(mapUserInfo(userInfo))
+    setIsAuthChecked(true)
     setMockPassword(password)
   }
 
@@ -39,7 +69,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, changePassword }}>
+    <AuthContext.Provider value={{ user, isAuthChecked, login, logout, changePassword }}>
       {children}
     </AuthContext.Provider>
   )

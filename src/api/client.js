@@ -1,7 +1,6 @@
 import { clearSession, getAccessToken, getRefreshToken, loadSession, saveSession } from './session.js'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
-const REISSUE_PATH = '/api/auth/reissue'
 
 export class ApiError extends Error {
   constructor(message, status, code) {
@@ -53,8 +52,8 @@ function reissueAccessToken() {
         throw new ApiError('로그인이 필요합니다.', 401, 'NO_REFRESH_TOKEN')
       }
 
-      const { response, data } = await sendRequest(REISSUE_PATH, {
-        method: 'POST',
+      const { response, data } = await sendRequest('/api/auth', {
+        method: 'PUT',
         body: { refreshToken },
       })
 
@@ -81,7 +80,7 @@ function reissueAccessToken() {
 export async function apiRequest(path, { method = 'GET', body, headers, ...rest } = {}) {
   const { response, data } = await sendRequest(path, { method, body, headers, accessToken: getAccessToken(), ...rest })
 
-  if (response.status === 401 && path !== REISSUE_PATH) {
+  if (response.status === 401) {
     let newAccessToken
     try {
       newAccessToken = await reissueAccessToken()
