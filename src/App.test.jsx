@@ -83,6 +83,33 @@ describe('app shell routing contract', () => {
     expect(searchButton).toBeDisabled()
   })
 
+  it('lets users select up to two symptoms and toggle them off again', () => {
+    render(
+      <MemoryRouter initialEntries={['/symptoms']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    const headache = screen.getByRole('button', { name: '두통', exact: true })
+    const fever = screen.getByRole('button', { name: '발열', exact: true })
+    const cough = screen.getByRole('button', { name: '기침', exact: true })
+
+    expect(headache).toHaveAttribute('aria-pressed', 'false')
+    expect(fever).toHaveAttribute('aria-pressed', 'false')
+    expect(cough).toHaveAttribute('aria-pressed', 'false')
+
+    fireEvent.click(headache)
+    fireEvent.click(fever)
+    expect(headache).toHaveAttribute('aria-pressed', 'true')
+    expect(fever).toHaveAttribute('aria-pressed', 'true')
+
+    fireEvent.click(cough)
+    expect(cough).toHaveAttribute('aria-pressed', 'false')
+
+    fireEvent.click(headache)
+    expect(headache).toHaveAttribute('aria-pressed', 'false')
+  })
+
   it('passes selected symptoms into the mock result screen', () => {
     render(
       <MemoryRouter initialEntries={['/identify/image']}>
