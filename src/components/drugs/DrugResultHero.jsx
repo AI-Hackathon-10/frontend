@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom'
 import Icon from '../ui/Icon.jsx'
-import PillIllustration from '../illustrations/PillIllustration.jsx'
+import PillIllustration from './PillIllustration.jsx'
+import { EXPIRATION_STATUS } from '../../data/mockData.js'
 
 export default function DrugResultHero({ drug }) {
+  const expiration = EXPIRATION_STATUS[drug.expirationStatus] ?? EXPIRATION_STATUS.unknown
+
   return (
     <article className="drug-result-hero">
       <div className="drug-result-hero__visual">
@@ -17,7 +20,7 @@ export default function DrugResultHero({ drug }) {
         <div className="drug-result-hero__eyebrow"><Icon name="check" size={14} /> 가장 관련 있는 약</div>
         <h3>{drug.name}</h3>
         <p className="drug-result-hero__effect">{drug.effect}</p>
-        <div className="drug-result-hero__expiry"><Icon name="alert" size={16} /><span>{drug.expiryStatus}</span></div>
+        <div className={`drug-result-hero__expiry drug-result-hero__expiry--${expiration.tone}`}><Icon name={drug.expirationStatus === 'valid' ? 'check' : 'alert'} size={16} /><span>{expiration.label}</span></div>
         <Link className="button button--outline button--small" to={`/drugs/${drug.id}`}>
           <span>상세 정보</span>
           <Icon name="arrowRight" size={16} />

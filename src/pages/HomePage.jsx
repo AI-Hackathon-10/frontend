@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import Icon from '../components/ui/Icon.jsx'
 import Badge from '../components/ui/Badge.jsx'
-import PillIllustration from '../components/illustrations/PillIllustration.jsx'
+import PillIllustration from '../components/drugs/PillIllustration.jsx'
 import SearchBar from '../components/drugs/SearchBar.jsx'
 
 const quickActions = [

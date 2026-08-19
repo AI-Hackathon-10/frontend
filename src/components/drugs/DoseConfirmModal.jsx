@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import Button from '../ui/Button.jsx'
 import Icon from '../ui/Icon.jsx'
+import alertTriangle from '../../assets/icons/triangle-alert.svg'
 
 export default function DoseConfirmModal({ open, drug, onCancel, onConfirm }) {
   useEffect(() => {
@@ -28,18 +29,12 @@ export default function DoseConfirmModal({ open, drug, onCancel, onConfirm }) {
         <button aria-label="복용 확인 모달 닫기" className="dose-modal__close icon-button" onClick={onCancel} type="button">
           <Icon name="close" size={19} />
         </button>
-        <div className="dose-modal__icon"><Icon name="alert" size={23} /></div>
-        <span className="eyebrow">{drug?.name ?? '알약'} 복용 전</span>
-        <h2 id="dose-confirm-title">복용 전 확인해주세요</h2>
-        <p className="dose-modal__lead">알약 사진만으로는 사용기한과 실제 제품을 확인할 수 없어요.</p>
-        <div className="dose-modal__warning">
-          <p>현재 알약의 사용기한을 확인할 수 없습니다.</p>
-          <p>AI가 식별한 의약품 정보는 실제 제품과 다를 수 있습니다.</p>
-        </div>
-        <p className="dose-modal__note">제품 포장 또는 전문가 확인 없이 AI 결과만으로 복용 여부를 판단하지 마세요.</p>
+        <div className="dose-modal__icon"><img alt="" src={alertTriangle} /></div>
+        <h2 id="dose-confirm-title">유효기간을 확인할 수 없어요</h2>
+        <p className="dose-modal__lead">유효기간을 확인할 수 없는 의약품은 복용을 권장하기 어렵습니다. 복용 전 의사 또는 약사에게 확인해주세요.</p>
         <div className="dose-modal__actions">
           <Button className="button--grow" onClick={onCancel} variant="outline">취소</Button>
-          <Button className="button--grow" onClick={onConfirm} variant="primary">확인 후 복용 기록</Button>
+          <Button className="button--grow" onClick={onConfirm} variant="primary">그래도 기록하기</Button>
         </div>
       </section>
     </div>

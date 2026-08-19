@@ -4,26 +4,16 @@ import GlobalNav from './GlobalNav.jsx'
 import UserMenu from '../user/UserMenu.jsx'
 import { useAuth } from '../user/AuthProvider.jsx'
 
-function RouteProgress() {
-  const { pathname } = useLocation()
-  const isFeature = pathname !== '/'
-
-  return (
-    <div className="route-progress" aria-hidden="true">
-      <span className={isFeature ? 'is-visible' : ''} />
-    </div>
-  )
-}
-
 export default function AppShell({ children }) {
   const { pathname } = useLocation()
+  const isAuthRoute = pathname === '/login' || pathname === '/signup'
   const { user } = useAuth()
 
   return (
     <div className="site-background">
       <div className="site-orb site-orb--one" />
       <div className="site-orb site-orb--two" />
-      <div className="app-shell">
+      <div className={`app-shell ${isAuthRoute ? 'app-shell--auth' : ''}`.trim()}>
         <header className="desktop-header">
           <Link aria-label="알약케어 홈" className="brand-lockup" to="/">
             <span className="brand-mark"><Icon name="pill" size={21} /></span>
@@ -47,7 +37,6 @@ export default function AppShell({ children }) {
           <span className="mobile-header__status"><Icon name="shield" size={17} /> 참고용</span>
         </header>
 
-        <RouteProgress />
         <main className="page-scroll">
           <div className="page-content">{children}</div>
         </main>

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../ui/Icon.jsx'
-import PillIllustration from '../illustrations/PillIllustration.jsx'
 
 function canCreateObjectUrl() {
   return typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
@@ -14,6 +13,7 @@ export default function UploadCard({ label, side, onChange }) {
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
   const [isPickerOpen, setPickerOpen] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   const sourceOptions = [
     { key: 'camera', label: '촬영하기', icon: 'camera', inputRef: cameraInputRef },
@@ -30,16 +30,24 @@ export default function UploadCard({ label, side, onChange }) {
 
   useEffect(() => () => releasePreview(), [])
 
-  const handleFileChange = (event) => {
-    const nextFile = event.target.files?.[0] ?? null
+  const selectFile = (nextFile) => {
+    if (!nextFile || !nextFile.type.startsWith('image/')) return
     releasePreview()
 
-    const nextPreviewUrl = nextFile && canCreateObjectUrl() ? URL.createObjectURL(nextFile) : ''
+    const nextPreviewUrl = canCreateObjectUrl() ? URL.createObjectURL(nextFile) : ''
     previewUrlRef.current = nextPreviewUrl
     setFile(nextFile)
     setPreviewUrl(nextPreviewUrl)
     setPickerOpen(false)
     onChange(nextFile)
+  }
+
+  const handleFileChange = (event) => selectFile(event.target.files?.[0] ?? null)
+
+  const handleDrop = (event) => {
+    event.preventDefault()
+    setIsDragging(false)
+    selectFile(event.dataTransfer.files?.[0] ?? null)
   }
 
   const handleRemove = () => {
@@ -54,10 +62,9 @@ export default function UploadCard({ label, side, onChange }) {
   }
 
   return (
-    <article className={`upload-card ${file ? 'has-file' : ''}`}>
+    <article className={`upload-card ${file ? 'has-file' : ''} ${isDragging ? 'is-dragging' : ''}`}>
       <div className="upload-card__topline">
         <div>
-          <span className="eyebrow">{side === 'front' ? '식별문자' : '분할선'}</span>
           <h3>{label}</h3>
         </div>
         <span className="upload-card__status">{file ? '선택됨' : '선택 전'}</span>
@@ -68,17 +75,21 @@ export default function UploadCard({ label, side, onChange }) {
         aria-expanded={isPickerOpen}
         aria-label={`${label} 이미지 선택 영역`}
         className="upload-card__preview"
+        onDragEnter={(event) => { event.preventDefault(); setIsDragging(true) }}
+        onDragLeave={(event) => { event.preventDefault(); setIsDragging(false) }}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={handleDrop}
         onClick={() => setPickerOpen((current) => !current)}
         type="button"
       >
         {previewUrl ? (
           <img alt={`${label} 업로드 미리보기`} src={previewUrl} />
         ) : (
-          <>
-            <span className="preview-grid" aria-hidden="true" />
-            <PillIllustration imprint={side === 'front' ? 'PM' : '|'} size="large" variant="pink" />
-            <span className="upload-card__example"><Icon name="sparkle" size={13} /> 예시 이미지</span>
-          </>
+          <span className="upload-card__empty">
+            <span className="upload-card__empty-icon"><Icon name="image" size={23} /></span>
+            <strong>사진을 추가해 주세요</strong>
+            <small>클릭하거나 이미지를 끌어다 놓으세요</small>
+          </span>
         )}
       </button>
 
@@ -106,11 +117,12 @@ export default function UploadCard({ label, side, onChange }) {
       )}
 
       <div className="upload-card__footer">
-        <span className="upload-card__hint">{file ? '이미지를 눌러 교체할 수 있어요' : '예시 이미지를 눌러 사진을 선택해요'}</span>
+        <span className="upload-card__hint">{file ? file.name : `${label}이 선명하게 보이는 사진을 권장해요`}</span>
         {file && (
-          <button aria-label={`${label} 사진 삭제`} className="icon-button icon-button--small" onClick={handleRemove} type="button">
-            <Icon name="close" size={15} />
-          </button>
+          <span className="upload-card__actions">
+            <button onClick={() => setPickerOpen((current) => !current)} type="button">변경</button>
+            <button aria-label={`${label} 사진 삭제`} onClick={handleRemove} type="button">삭제</button>
+          </span>
         )}
       </div>
     </article>
