@@ -1905,6 +1905,34 @@ svg {
   background: var(--primary);
 }
 
+.symptom-memo {
+  display: block;
+  width: 100%;
+  min-height: 118px;
+  padding: 15px;
+  color: var(--ink-soft);
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.7;
+  outline: none;
+  resize: vertical;
+}
+
+.symptom-memo::placeholder {
+  color: var(--ink-muted);
+  font-weight: 550;
+}
+
+.symptom-memo:focus-visible {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(29, 141, 204, 0.14);
+}
+
 .summary-card {
   margin-top: 32px;
   padding: 21px;

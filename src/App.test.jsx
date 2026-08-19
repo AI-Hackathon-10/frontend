@@ -125,6 +125,22 @@ describe('app shell routing contract', () => {
     expect(onsetTime).toHaveAttribute('step', '3600')
   })
 
+  it('lets users type a symptom memo and shows the current character count', () => {
+    render(
+      <MemoryRouter initialEntries={['/symptoms']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    const memo = screen.getByLabelText('증상 메모')
+    expect(memo.tagName).toBe('TEXTAREA')
+    expect(memo).toHaveValue('')
+
+    fireEvent.change(memo, { target: { value: '오후부터 몸이 무겁습니다.' } })
+    expect(memo).toHaveValue('오후부터 몸이 무겁습니다.')
+    expect(screen.getByText('14 / 200')).toBeInTheDocument()
+  })
+
   it('passes selected symptoms into the mock result screen', () => {
     render(
       <MemoryRouter initialEntries={['/identify/image']}>
