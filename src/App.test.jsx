@@ -141,6 +141,29 @@ describe('app shell routing contract', () => {
     expect(screen.getByText('14 / 200')).toBeInTheDocument()
   })
 
+  it('creates a symptom document mock and moves the user to mypage', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    fireEvent.click(screen.getAllByRole('link', { name: '증상 기록' })[0])
+
+    fireEvent.click(screen.getByRole('button', { name: '복통', exact: true }))
+    fireEvent.change(screen.getByLabelText('증상 시작 날짜'), { target: { value: '2026-08-19' } })
+    fireEvent.change(screen.getByLabelText('증상 시작 시간'), { target: { value: '14:00' } })
+    fireEvent.change(screen.getByLabelText('증상 메모'), { target: { value: '식사 후 복통이 있습니다.' } })
+    fireEvent.click(screen.getByRole('button', { name: '증상 문서 만들기', exact: true }))
+
+    expect(screen.getByRole('heading', { name: '마이페이지' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /복통/ })).toBeInTheDocument()
+    expect(screen.queryByText('현재 상태를 한 문장으로')).not.toBeInTheDocument()
+  })
+
   it('passes selected symptoms into the mock result screen', () => {
     render(
       <MemoryRouter initialEntries={['/identify/image']}>

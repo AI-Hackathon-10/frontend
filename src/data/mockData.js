@@ -104,6 +104,23 @@ export const SYMPTOM_REPORTS = [
   },
 ]
 
+export const SYMPTOM_REPORTS_STORAGE_KEY = 'pill-care-symptom-reports'
+
+export function createSymptomReport({ symptoms, onsetDate, onsetTime, memo }) {
+  const onsetLabel = [onsetDate, onsetTime].filter(Boolean).join(' ')
+  const symptomsLabel = symptoms.length > 0 ? symptoms.join('과 ') : '기타 증상'
+
+  return {
+    id: `report-${Date.now()}`,
+    title: `${symptomsLabel} 증상 기록`,
+    createdAt: new Date().toISOString(),
+    symptoms,
+    severity: '사용자 입력 기록',
+    summary: [onsetLabel && `${onsetLabel}부터`, memo].filter(Boolean).join(' · ') || '사용자가 작성한 증상 기록입니다.',
+    documentImageUrl: 'https://example.com/presigned/mock-symptom-report.png',
+  }
+}
+
 export function getDrugById(drugId) {
   return DRUGS.find((drug) => drug.id === drugId) ?? DRUGS[0]
 }
