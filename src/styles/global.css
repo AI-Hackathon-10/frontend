@@ -2003,6 +2003,14 @@ svg {
   text-align: center;
 }
 
+.symptom-document-action__status {
+  overflow-wrap: anywhere;
+}
+
+.symptom-document-action__status.is-ready {
+  color: var(--primary-strong);
+}
+
 @media (max-width: 1050px) {
   .desktop-header {
     gap: 20px;

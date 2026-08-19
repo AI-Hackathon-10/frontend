@@ -154,6 +154,7 @@ describe('app shell routing contract', () => {
     fireEvent.click(screen.getAllByRole('link', { name: '증상 기록' })[0])
 
     fireEvent.click(screen.getByRole('button', { name: '복통', exact: true }))
+    fireEvent.click(screen.getByRole('button', { name: '두통', exact: true }))
     fireEvent.change(screen.getByLabelText('증상 시작 날짜'), { target: { value: '2026-08-19' } })
     fireEvent.change(screen.getByLabelText('증상 시작 시간'), { target: { value: '14:00' } })
     fireEvent.change(screen.getByLabelText('증상 메모'), { target: { value: '식사 후 복통이 있습니다.' } })
@@ -162,6 +163,29 @@ describe('app shell routing contract', () => {
     expect(screen.getByRole('heading', { name: '마이페이지' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /복통/ })).toBeInTheDocument()
     expect(screen.queryByText('현재 상태를 한 문장으로')).not.toBeInTheDocument()
+  })
+
+  it('explains why the symptom document button is disabled until required inputs are complete', () => {
+    render(
+      <MemoryRouter initialEntries={['/symptoms']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    const createButton = screen.getByRole('button', { name: '증상 문서 만들기', exact: true })
+    expect(createButton).toBeDisabled()
+    expect(screen.getByRole('status')).toHaveTextContent('증상 2개와 시작 날짜·시간을 입력해 주세요.')
+
+    fireEvent.click(screen.getByRole('button', { name: '복통', exact: true }))
+    expect(screen.getByRole('status')).toHaveTextContent('증상을 1개 더 선택해 주세요.')
+
+    fireEvent.click(screen.getByRole('button', { name: '두통', exact: true }))
+    expect(screen.getByRole('status')).toHaveTextContent('시작 날짜와 시간을 입력해 주세요.')
+
+    fireEvent.change(screen.getByLabelText('증상 시작 날짜'), { target: { value: '2026-08-19' } })
+    fireEvent.change(screen.getByLabelText('증상 시작 시간'), { target: { value: '14:00' } })
+    expect(createButton).toBeEnabled()
+    expect(screen.getByRole('status')).toHaveTextContent('입력한 내용으로 증상 문서를 만들 수 있어요.')
   })
 
   it('passes selected symptoms into the mock result screen', () => {
