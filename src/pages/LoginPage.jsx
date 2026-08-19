@@ -4,6 +4,7 @@ import AuthField from '../components/user/AuthField.jsx'
 import AuthPageLayout from '../components/user/AuthPageLayout.jsx'
 import { useAuth } from '../components/user/AuthProvider.jsx'
 import Icon from '../components/ui/Icon.jsx'
+import { ApiError } from '../api/client.js'
 
 export default function LoginPage() {
   const location = useLocation()
@@ -11,13 +12,24 @@ export default function LoginPage() {
   const { login } = useAuth()
   const [userId, setUserId] = useState(location.state?.registeredId ?? '')
   const [password, setPassword] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const canSubmit = Boolean(userId.trim() && password)
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    if (!canSubmit) return
-    login({ id: userId.trim(), password })
-    navigate('/', { replace: true })
+    if (!canSubmit || isSubmitting) return
+
+    setSubmitError('')
+    setIsSubmitting(true)
+    try {
+      await login({ id: userId.trim(), password })
+      navigate('/', { replace: true })
+    } catch (error) {
+      setSubmitError(error instanceof ApiError ? error.message : '로그인 요청 중 문제가 발생했습니다.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -51,13 +63,13 @@ export default function LoginPage() {
           type="password"
           value={password}
         />
-        <button className="button button--primary button--wide auth-form__submit" disabled={!canSubmit} type="submit">
-          로그인
+        {submitError ? <p className="auth-feedback" role="alert">{submitError}</p> : null}
+
+        <button className="button button--primary button--wide auth-form__submit" disabled={!canSubmit || isSubmitting} type="submit">
+          {isSubmitting ? '로그인 중...' : '로그인'}
           <Icon name="arrowRight" size={18} />
         </button>
       </form>
-
-      <p className="auth-form__note">현재는 화면 흐름만 제공하며 실제 인증은 추후 Spring Boot API와 연결됩니다.</p>
     </AuthPageLayout>
   )
 }
