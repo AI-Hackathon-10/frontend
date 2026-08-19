@@ -10,3 +10,7 @@ export function login({ loginId, password }) {
 export function logout() {
   return apiRequest('/api/auth', { method: 'DELETE' })
 }
+
+export function me() {
+  return apiRequest('/api/auth', { method: 'GET' })
+}
