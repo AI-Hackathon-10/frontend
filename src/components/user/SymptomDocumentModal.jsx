@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { toBlob } from 'html-to-image'
 import Icon from '../ui/Icon.jsx'
 
 const DEFAULT_DOCUMENT_DATA = {
@@ -21,11 +22,22 @@ function formatDocumentDate(value) {
 
 function DocumentImage({ alt, label, src }) {
   const isHttpImage = typeof src === 'string' && /^https?:\/\//i.test(src)
+  const [hasLoadError, setHasLoadError] = useState(false)
+
+  useEffect(() => {
+    setHasLoadError(false)
+  }, [src])
 
   return (
     <figure className="symptom-document__image-figure">
-      {isHttpImage ? (
-        <img alt={alt} className="symptom-document__image" src={src} />
+      {isHttpImage && !hasLoadError ? (
+        <img
+          alt={alt}
+          className="symptom-document__image"
+          crossOrigin="anonymous"
+          onError={() => setHasLoadError(true)}
+          src={src}
+        />
       ) : (
         <div aria-label={alt} className="symptom-document__image-placeholder" role="img">
           <Icon name="image" size={30} />
@@ -39,10 +51,12 @@ function DocumentImage({ alt, label, src }) {
 
 export default function SymptomDocumentModal({ open, report, onClose }) {
   const dialogRef = useRef(null)
-  const [saveStatus, setSaveStatus] = useState('')
+  const documentRef = useRef(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState(null)
 
   useEffect(() => {
-    setSaveStatus('')
+    setSaveStatus(null)
   }, [report])
 
   useEffect(() => {
@@ -109,8 +123,38 @@ export default function SymptomDocumentModal({ open, report, onClose }) {
     if (event.target === event.currentTarget) onClose()
   }
 
-  const handleSaveDocument = () => {
-    setSaveStatus('디바이스 저장 기능은 준비 중입니다.')
+  const handleSaveDocument = async () => {
+    if (isSaving || !documentRef.current) return
+
+    setIsSaving(true)
+    setSaveStatus(null)
+
+    try {
+      const imageBlob = await toBlob(documentRef.current, {
+        backgroundColor: '#ffffff',
+        pixelRatio: 2,
+      })
+
+      if (!imageBlob) throw new Error('PNG conversion returned no data')
+
+      const objectUrl = URL.createObjectURL(imageBlob)
+      try {
+        const downloadLink = document.createElement('a')
+        downloadLink.href = objectUrl
+        downloadLink.download = `증상기록-${documentData.id ?? '문서'}.png`
+        document.body.appendChild(downloadLink)
+        downloadLink.click()
+        downloadLink.remove()
+      } finally {
+        URL.revokeObjectURL(objectUrl)
+      }
+
+      setSaveStatus({ type: 'success', message: '증상 기록 문서를 저장했습니다.' })
+    } catch {
+      setSaveStatus({ type: 'error', message: '증상 기록 문서를 저장하지 못했습니다.' })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -127,7 +171,7 @@ export default function SymptomDocumentModal({ open, report, onClose }) {
           <Icon name="close" size={19} />
         </button>
         <h2 className="sr-only" id="symptom-document-modal-title">증상 기록 문서 보기</h2>
-        <article aria-label="증상 기록 문서" className="symptom-document">
+        <article aria-label="증상 기록 문서" className="symptom-document" ref={documentRef}>
           <header className="symptom-document__header">
             <h3>증상 기록 문서</h3>
             <div aria-hidden="true" className="symptom-document__title-divider">
@@ -182,11 +226,23 @@ export default function SymptomDocumentModal({ open, report, onClose }) {
           </footer>
         </article>
         <div className="document-preview__actions">
-          <button className="button button--primary button--wide" onClick={handleSaveDocument} type="button">
+          <button
+            className="button button--primary button--wide"
+            disabled={isSaving}
+            onClick={handleSaveDocument}
+            type="button"
+          >
             <Icon name="download" size={18} />
-            저장하기
+            {isSaving ? '저장 중...' : '저장하기'}
           </button>
-          {saveStatus ? <p className="document-save-status" role="status">{saveStatus}</p> : null}
+          {saveStatus ? (
+            <p
+              className={`document-save-status document-save-status--${saveStatus.type}`}
+              role={saveStatus.type === 'error' ? 'alert' : 'status'}
+            >
+              {saveStatus.message}
+            </p>
+          ) : null}
         </div>
       </div>
     </div>
