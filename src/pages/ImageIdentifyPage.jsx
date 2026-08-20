@@ -57,29 +57,45 @@ export default function ImageIdentifyPage() {
     setPillSets((current) => current.filter((pillSet) => pillSet.id !== setId));
   };
 
-  // 💡 S3 Presigned URL을 발급받아 업로드 후 식별 API를 순차적으로 호출하는 정석 파이프라인
-  async function uploadOnePillSet(pillSet) {
-    // 1. 공통 medicationApi를 사용하여 안전하게 S3 업로드용 URL과 requestId 발급
-    const { requestId, frontUploadUrl, backUploadUrl } =
-      await getPresignedUrl();
+  async function uploadOnePillSet(pillSet, index) {
+    const pillLabel = `알약 ${index + 1}`;
+    try {
+      const { requestId, frontUploadUrl, backUploadUrl } =
+        await getPresignedUrl();
 
-    // 2. 발급받은 개별 S3 URL로 이미지 바이너리(File 객체) 전송
-    await Promise.all([
-      uploadMedicationImage(frontUploadUrl, pillSet.front),
-      uploadMedicationImage(backUploadUrl, pillSet.back),
-    ]);
+      await Promise.all([
+        uploadMedicationImage(frontUploadUrl, pillSet.front),
+        uploadMedicationImage(backUploadUrl, pillSet.back),
+      ]);
 
-    const startedAt =
-      onsetDate && onsetTime
-        ? new Date(`${onsetDate}T${onsetTime}`).toISOString()
-        : null;
+      const startedAt =
+        onsetDate && onsetTime
+          ? new Date(`${onsetDate}T${onsetTime}`).toISOString()
+          : null;
 
-    // 3. 업로드가 완료되면 최종 식별 API 호출 결과를 반환 (client.js 내부에서 ApiError 처리됨)
-    return identifyMedication({
-      requestId,
-      symptomTypes: toMedicationSymptomTypes(selectedSymptoms),
-      startedAt,
-    });
+      const result = await identifyMedication({
+        requestId,
+        symptomTypes: toMedicationSymptomTypes(selectedSymptoms),
+        startedAt,
+      });
+
+      const items = Array.isArray(result) ? result : [result];
+      console.log(`[DEBUG] ${pillLabel} API 응답:`, JSON.stringify(result));
+      return items.map((item) => ({ ...item, pillLabel }));
+    } catch (e) {
+      console.error(`[DEBUG] ${pillLabel} API 에러:`, e);
+      return [
+        {
+          ok: false,
+          pillLabel,
+          itemName: null,
+          error:
+            e instanceof ApiError
+              ? e.message
+              : "분석 중 오류가 발생했습니다.",
+        },
+      ];
+    }
   }
 
   const handleFindPill = async () => {
@@ -108,7 +124,7 @@ export default function ImageIdentifyPage() {
 
     try {
       // 모든 알약 세트를 순차/병렬로 업로드 및 분석 요청
-      const results = await Promise.all(readySets.map(uploadOnePillSet));
+      const results = await Promise.all(readySets.map((ps, i) => uploadOnePillSet(ps, i)));
       const startedAt = new Date(`${onsetDate}T${onsetTime}`).toISOString();
       const analysisResults = saveMedicationAnalysisResults(results);
 
