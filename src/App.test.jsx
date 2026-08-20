@@ -55,7 +55,7 @@ describe('app shell routing contract', () => {
     expect(document.querySelector('.route-progress')).not.toBeInTheDocument()
   })
 
-  it('shows primary symptoms first and keeps the search action disabled until one is selected', () => {
+  it('shows symptom context fields before the pill photo section', () => {
     render(
       <MemoryRouter initialEntries={['/identify/image']}>
         <App />
@@ -77,11 +77,32 @@ describe('app shell routing contract', () => {
     fireEvent.click(screen.getByRole('button', { name: '두통', exact: true }))
     expect(screen.getByRole('button', { name: '두통', exact: true })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: '다른 증상 찾기', exact: true })).toBeInTheDocument()
+    expect(searchButton).toBeDisabled()
+
+    fireEvent.change(screen.getByLabelText('증상 시작 날짜'), { target: { value: '2026-08-20' } })
+    fireEvent.change(screen.getByLabelText('증상 시작 시간'), { target: { value: '14:00' } })
     expect(searchButton).toBeEnabled()
 
     fireEvent.click(screen.getByRole('button', { name: '두통', exact: true }))
     expect(screen.getByRole('button', { name: '두통', exact: true })).toHaveAttribute('aria-pressed', 'false')
     expect(searchButton).toBeDisabled()
+  })
+
+  it('keeps the symptom memo available before pill photos', () => {
+    render(
+      <MemoryRouter initialEntries={['/identify/image']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    const memo = screen.getByLabelText('증상 메모')
+    expect(memo).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '증상 발현 시각' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '증상 메모' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '알약 사진' })).toBeInTheDocument()
+
+    fireEvent.change(memo, { target: { value: '밤부터 몸이 무겁습니다.' } })
+    expect(memo).toHaveValue('밤부터 몸이 무겁습니다.')
   })
 
   it('renders symptom report cards instead of the symptom input form', () => {
