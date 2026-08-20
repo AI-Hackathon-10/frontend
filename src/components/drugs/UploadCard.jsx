@@ -5,7 +5,7 @@ function canCreateObjectUrl() {
   return typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
 }
 
-export default function UploadCard({ label, side, onChange }) {
+export default function UploadCard({ label, side, onChange, required = false }) {
   const cameraInputRef = useRef(null)
   const albumInputRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -83,6 +83,7 @@ export default function UploadCard({ label, side, onChange }) {
         aria-controls={`${side}-source-picker`}
         aria-expanded={isPickerOpen}
         aria-label={`${label} 이미지 선택 영역`}
+        aria-required={required}
         className="upload-card__preview"
         onDragEnter={(event) => { event.preventDefault(); setIsDragging(true) }}
         onDragLeave={(event) => { event.preventDefault(); setIsDragging(false) }}
@@ -118,7 +119,7 @@ export default function UploadCard({ label, side, onChange }) {
                     <span>{source.label}</span>
                     <Icon name="chevronRight" size={15} />
                   </button>
-                  <input accept="image/*" aria-label={`${label} ${source.label}`} capture={source.key === 'camera' ? 'environment' : undefined} className="sr-only" id={`${side}-${source.key}-upload`} onChange={handleFileChange} ref={source.inputRef} type="file" />
+                  <input accept="image/*" aria-label={`${label} ${source.label}`} aria-required={required} capture={source.key === 'camera' ? 'environment' : undefined} className="sr-only" id={`${side}-${source.key}-upload`} onChange={handleFileChange} ref={source.inputRef} type="file" />
                 </div>
               ))}
             </div>
