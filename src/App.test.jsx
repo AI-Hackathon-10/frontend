@@ -153,6 +153,9 @@ describe('app shell routing contract', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: '발열', exact: true }))
+    fireEvent.change(screen.getByLabelText('증상 시작 날짜'), { target: { value: '2026-08-20' } })
+    fireEvent.change(screen.getByLabelText('증상 시작 시간'), { target: { value: '14:00' } })
+    fireEvent.change(screen.getByLabelText('증상 메모'), { target: { value: '오후부터 열이 납니다.' } })
     fireEvent.click(screen.getByRole('button', { name: '알약 찾기', exact: true }))
 
     expect(screen.getByRole('heading', { name: '판별 결과' })).toBeInTheDocument()
