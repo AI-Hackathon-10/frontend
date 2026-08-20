@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App.jsx'
+import './styles/global.css'
 
 describe('app shell routing contract', () => {
   it('renders the branded home heading', () => {
@@ -383,6 +384,58 @@ describe('authentication pages', () => {
     expect(screen.getByRole('link', { name: '마이페이지' })).toHaveAttribute('href', '/mypage')
     expect(screen.getByRole('link', { name: '비밀번호 수정' })).toHaveAttribute('href', '/password')
     expect(screen.getByRole('button', { name: '로그아웃' })).toBeInTheDocument()
+  })
+
+  it('keeps the open user menu above the home content', async () => {
+    const payload = btoa(JSON.stringify({
+      sub: 1,
+      name: 'test-user',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }))
+    localStorage.setItem('pillcare.session', JSON.stringify({
+      accessToken: `header.${payload}.signature`,
+      refreshToken: 'refresh-token',
+      loginId: 'test-user',
+    }))
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(JSON.stringify({
+        isSuccess: true,
+        result: {
+          userId: 1,
+          loginId: 'test-user',
+          name: 'test-user',
+          gender: 'female',
+          birthDate: '1998-04-12',
+        },
+      })),
+    }))
+
+    try {
+      render(
+        <MemoryRouter initialEntries={['/']}>
+          <App />
+        </MemoryRouter>,
+      )
+
+      await waitFor(() => expect(screen.getByRole('heading', { name: '오늘의 알약 케어' })).toBeInTheDocument())
+      fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
+
+      const panel = document.querySelector('.user-menu__panel')
+      const homeWelcome = document.querySelector('.home-welcome')
+      const panelZIndex = Number.parseInt(getComputedStyle(panel).zIndex, 10) || 0
+      const homeWelcomeZIndex = Number.parseInt(getComputedStyle(homeWelcome).zIndex, 10) || 0
+
+      expect(panelZIndex).toBeGreaterThan(homeWelcomeZIndex)
+      expect(screen.getByRole('link', { name: '마이페이지' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: '비밀번호 수정' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: '로그아웃' })).toBeInTheDocument()
+    } finally {
+      localStorage.removeItem('pillcare.session')
+      vi.unstubAllGlobals()
+    }
   })
 
   it('shows symptom report cards and opens the selected document image', () => {
