@@ -44,7 +44,7 @@ export default function ImageIdentifyPage() {
     setPillSets((current) => current.filter((pillSet) => pillSet.id !== setId))
   }
 
-
+  // S3 업로드 및 API 식별 호출을 처리하는 단일 세트 함수
   async function uploadOnePillSet(pillSet) {
     const { requestId, frontUploadUrl, backUploadUrl } = await getPresignedUrl()
 
@@ -61,11 +61,24 @@ export default function ImageIdentifyPage() {
       }),
     ])
 
-    return identifyMedication({ requestId, symptoms: selectedSymptoms })
+    // 백엔드로 전송 시 필요한 메타데이터(증상 시간, 메모)도 함께 캡슐화 가능
+    const startedAt = onsetDate && onsetTime ? new Date(`${onsetDate}T${onsetTime}`).toISOString() : null
+
+    return identifyMedication({ 
+      requestId, 
+      symptoms: selectedSymptoms,
+      memo,
+      startedAt
+    })
   }
 
+  // 💡 중복을 제거하고 비즈니스 로직을 하나로 합친 핸들러
   const handleFindPill = async () => {
     if (selectedSymptoms.length === 0) return
+    if (!onsetDate || !onsetTime) {
+      setErrorMessage('증상 발현 날짜와 시간을 선택해 주세요.')
+      return
+    }
 
     const readySets = pillSets.filter((p) => p.front && p.back)
     if (readySets.length === 0) {
@@ -77,10 +90,18 @@ export default function ImageIdentifyPage() {
     setErrorMessage(null)
 
     try {
+      // 모든 알약 세트를 병렬로 업로드 및 분석 요청
       const results = await Promise.all(readySets.map(uploadOnePillSet))
+      const startedAt = new Date(`${onsetDate}T${onsetTime}`).toISOString()
 
+      // 결과 페이지로 안전하게 데이터 전송하며 라우팅
       navigate('/search/results', {
-        state: { symptoms: selectedSymptoms, results },
+        state: { 
+          symptoms: selectedSymptoms, 
+          results,
+          memo,
+          startedAt
+        },
       })
     } catch (e) {
       const message = e instanceof ApiError ? e.message : '분석 중 오류가 발생했어요. 다시 시도해 주세요.'
@@ -88,20 +109,6 @@ export default function ImageIdentifyPage() {
     } finally {
       setIsSubmitting(false)
     }
-
-  const handleFindPill = () => {
-    if (selectedSymptoms.length === 0 || !onsetDate || !onsetTime) return
-
-    const startedAt = new Date(`${onsetDate}T${onsetTime}`).toISOString()
-
-    navigate('/search/results', {
-      state: {
-        memo,
-        startedAt,
-        symptoms: selectedSymptoms,
-        drugId: 'prime-tablet',
-      },
-    })
   }
 
   return (
@@ -200,7 +207,6 @@ export default function ImageIdentifyPage() {
       <div className="identify-action-bar">
         <Button disabled={selectedSymptoms.length === 0 || isSubmitting} icon="search" onClick={handleFindPill} variant="primary">
           {isSubmitting ? '분석 중...' : '알약 찾기'}
-
         </Button>
       </div>
 
@@ -209,4 +215,4 @@ export default function ImageIdentifyPage() {
       </div>
     </div>
   )
-  }}
+}
