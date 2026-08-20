@@ -24,7 +24,6 @@ export default function AppShell({ children }) {
           </Link>
           <GlobalNav />
           <div className="header-actions">
-            <div className="header-status"><span className="status-dot" /> 참고용 정보 서비스</div>
             {user ? <UserMenu /> : null}
           </div>
         </header>
@@ -34,7 +33,6 @@ export default function AppShell({ children }) {
             <span className="brand-mark"><Icon name="pill" size={20} /></span>
             <span><strong>알약케어</strong><small>pill care studio</small></span>
           </Link>
-          <span className="mobile-header__status"><Icon name="shield" size={17} /> 참고용</span>
         </header>
 
         <main className="page-scroll">

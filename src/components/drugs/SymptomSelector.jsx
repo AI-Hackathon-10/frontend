@@ -25,7 +25,7 @@ export default function SymptomSelector({ categories, primarySymptoms, selected,
             증상 선택 {required && <><span aria-hidden="true" className="required-mark">*</span><span className="sr-only"> (필수)</span></>}
           </h2>
         </div>
-        <span className="symptom-count" aria-live="polite">{selected.length}/{maxSelected}개 선택</span>
+        <span className="symptom-count" aria-live="polite">{selected.length}개 선택</span>
       </div>
       <p className="section-helper">해당되는 증상을 모두 선택할 수 있어요.</p>
       <div className="symptom-selector__grid">
@@ -83,7 +83,7 @@ export default function SymptomSelector({ categories, primarySymptoms, selected,
               ))}
             </div>
             <footer className="symptom-sheet__footer">
-              <span>{selected.length}/{maxSelected}개 선택</span>
+              <span>{selected.length}개 선택</span>
               <button className="button button--primary" onClick={() => setIsOpen(false)} type="button">선택 완료</button>
             </footer>
           </section>

@@ -67,7 +67,7 @@ describe('ImageIdentifyPage onset input', () => {
     fireEvent.click(screen.getByRole('button', { name: '재채기' }))
     fireEvent.click(screen.getByRole('button', { name: '가래' }))
 
-    expect(screen.getAllByText('10/10개 선택').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('10개 선택').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: '몸살' })).toBeDisabled()
 
     fireEvent.click(screen.getByRole('button', { name: '재채기' }))
