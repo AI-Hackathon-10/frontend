@@ -202,7 +202,7 @@ export default function ElderlyVoiceRecommendPage() {
             </div>
             <h2>말씀만 하세요, AI가 도와드려요</h2>
             <p>불편한 곳을 말씀하시면 알맞은 약을 찾아드려요</p>
-            <button className="btn btn--primary btn--large" onClick={handleStart} type="button">
+            <button className="button button--primary" onClick={handleStart} type="button">
               시작하기
             </button>
           </div>

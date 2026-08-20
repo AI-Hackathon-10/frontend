@@ -211,7 +211,7 @@ export default function VoiceRecommendPage() {
             </div>
             <h2>AI와 음성으로 대화해 보세요</h2>
             <p>증상을 말씀하시면 적합한 약을 추천해 드려요</p>
-            <button className="btn btn--primary btn--large" onClick={handleStart} type="button">
+            <button className="button button--primary" onClick={handleStart} type="button">
               대화 시작하기
             </button>
           </div>
