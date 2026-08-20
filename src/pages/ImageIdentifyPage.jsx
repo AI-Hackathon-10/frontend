@@ -6,12 +6,16 @@ import Button from '../components/ui/Button.jsx'
 import SymptomSelector from '../components/drugs/SymptomSelector.jsx'
 import UploadCard from '../components/drugs/UploadCard.jsx'
 import { PRIMARY_SYMPTOMS, SYMPTOM_CATEGORIES } from '../data/mockData.js'
+import { getPresignedUrl, identifyMedication } from '../api/medicationApi.js'
+import { ApiError } from '../api/client.js'
 
 export default function ImageIdentifyPage() {
   const navigate = useNavigate()
   const [selectedSymptoms, setSelectedSymptoms] = useState([])
   const nextPillSetId = useRef(2)
   const [pillSets, setPillSets] = useState([{ id: 1, front: null, back: null }])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState(null)
 
   const handleToggleSymptom = (symptom) => {
     setSelectedSymptoms((current) => (
@@ -37,15 +41,49 @@ export default function ImageIdentifyPage() {
     setPillSets((current) => current.filter((pillSet) => pillSet.id !== setId))
   }
 
-  const handleFindPill = () => {
+  async function uploadOnePillSet(pillSet) {
+    const { requestId, frontUploadUrl, backUploadUrl } = await getPresignedUrl()
+
+    await Promise.all([
+      fetch(frontUploadUrl, {
+        method: 'PUT',
+        body: pillSet.front,
+        headers: { 'Content-Type': 'image/jpeg' },
+      }),
+      fetch(backUploadUrl, {
+        method: 'PUT',
+        body: pillSet.back,
+        headers: { 'Content-Type': 'image/jpeg' },
+      }),
+    ])
+
+    return identifyMedication({ requestId, symptoms: selectedSymptoms })
+  }
+
+  const handleFindPill = async () => {
     if (selectedSymptoms.length === 0) return
 
-    navigate('/search/results', {
-      state: {
-        symptoms: selectedSymptoms,
-        drugId: 'prime-tablet',
-      },
-    })
+    const readySets = pillSets.filter((p) => p.front && p.back)
+    if (readySets.length === 0) {
+      setErrorMessage('앞면과 뒷면 사진을 모두 추가해 주세요.')
+      return
+    }
+
+    setIsSubmitting(true)
+    setErrorMessage(null)
+
+    try {
+      const results = await Promise.all(readySets.map(uploadOnePillSet))
+
+      navigate('/search/results', {
+        state: { symptoms: selectedSymptoms, results },
+      })
+    } catch (e) {
+      const message = e instanceof ApiError ? e.message : '분석 중 오류가 발생했어요. 다시 시도해 주세요.'
+      setErrorMessage(message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -71,7 +109,11 @@ export default function ImageIdentifyPage() {
             <section aria-labelledby={`pill-set-${pillSet.id}-title`} className="pill-set" key={pillSet.id}>
               <div className="pill-set__header">
                 <h3 id={`pill-set-${pillSet.id}-title`}>알약 {index + 1}</h3>
-                {index > 0 && <button aria-label={`알약 ${index + 1} 삭제`} onClick={() => handleRemovePillSet(pillSet.id)} type="button"><Icon name="close" size={14} /> 삭제</button>}
+                {index > 0 && (
+                  <button aria-label={`알약 ${index + 1} 삭제`} onClick={() => handleRemovePillSet(pillSet.id)} type="button">
+                    <Icon name="close" size={14} /> 삭제
+                  </button>
+                )}
               </div>
               <div className="upload-grid">
                 <UploadCard label="앞면" side={`pill-${pillSet.id}-front`} onChange={(file) => handleUploadChange(pillSet.id, 'front', file)} />
@@ -80,17 +122,21 @@ export default function ImageIdentifyPage() {
             </section>
           ))}
         </div>
-        <button className="pill-set-add" onClick={handleAddPillSet} type="button"><Icon name="plus" size={15} /> 알약 추가</button>
+        <button className="pill-set-add" onClick={handleAddPillSet} type="button">
+          <Icon name="plus" size={15} /> 알약 추가
+        </button>
       </section>
 
+      {errorMessage && <p className="page-footnote page-footnote--error">{errorMessage}</p>}
+
       <div className="identify-action-bar">
-        <Button disabled={selectedSymptoms.length === 0} icon="search" onClick={handleFindPill} variant="primary">
-          알약 찾기
+        <Button disabled={selectedSymptoms.length === 0 || isSubmitting} icon="search" onClick={handleFindPill} variant="primary">
+          {isSubmitting ? '분석 중...' : '알약 찾기'}
         </Button>
       </div>
 
       <div className="identify-footnotes">
-        <p className="page-footnote"><Icon name="shield" size={15} /> AI 판별 결과는 참고용이며, 사진은 서버에 저장되지 않습니다.</p>
+        <p className="page-footnote"><Icon name="shield" size={15} /> AI 판별 결과는 참고용이며, 사진은 판별 목적으로만 안전하게 처리됩니다.</p>
       </div>
     </div>
   )
