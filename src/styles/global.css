@@ -128,6 +128,8 @@ svg {
 }
 
 .desktop-header {
+  position: relative;
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: 40px;
@@ -4664,6 +4666,7 @@ button:disabled {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
+  z-index: 30;
   display: grid;
   width: 212px;
   padding: 8px;
