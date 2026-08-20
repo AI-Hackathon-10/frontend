@@ -54,6 +54,7 @@ export default function SymptomDocumentModal({ open, report, onClose }) {
   const symptoms = documentData.symptoms?.join(' · ') || '-'
   const startedAt = documentData.startedAt ?? documentData.createdAt
   const takenAt = documentData.takenAt ?? documentData.createdAt
+  const memo = (documentData.memo ?? '').slice(0, 200)
 
   const handleBackdropMouseDown = (event) => {
     if (event.target === event.currentTarget) onClose()
@@ -102,6 +103,7 @@ export default function SymptomDocumentModal({ open, report, onClose }) {
               <div><dt>증상 시작 시점</dt><dd>{formatDocumentDate(startedAt)}</dd></div>
               <div><dt>복용한 약품</dt><dd>{documentData.drugName}</dd></div>
               <div><dt>복용 시점</dt><dd>{formatDocumentDate(takenAt)}</dd></div>
+              {memo.trim() ? <div><dt>메모</dt><dd className="symptom-document__memo">{memo}</dd></div> : null}
             </dl>
           </section>
 

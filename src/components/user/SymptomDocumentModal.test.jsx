@@ -10,6 +10,7 @@ describe('SymptomDocumentModal', () => {
         open
         report={{
           createdAt: '2026-08-19T14:30:00+09:00',
+          memo: '밤부터 머리가 아프고 열감이 있어 메모를 남겼습니다.',
           symptoms: ['두통', '발열'],
         }}
       />,
@@ -20,6 +21,7 @@ describe('SymptomDocumentModal', () => {
     expect(screen.getByText('1995-08-19')).toBeInTheDocument()
     expect(screen.getByText('두통 · 발열')).toBeInTheDocument()
     expect(screen.getByText('프리메정')).toBeInTheDocument()
+    expect(screen.getByText('밤부터 머리가 아프고 열감이 있어 메모를 남겼습니다.')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: '약 앞면 이미지' })).toBeInTheDocument()
     expect(screen.getByRole('img', { name: '약 뒷면 이미지' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '저장하기' })).toBeInTheDocument()
