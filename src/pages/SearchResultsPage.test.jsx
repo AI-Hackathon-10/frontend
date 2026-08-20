@@ -58,8 +58,9 @@ describe('clean medication result hierarchy', () => {
     expect(dosageDetails).not.toHaveAttribute('open')
     fireEvent.click(screen.getByText('복용 방법'))
     expect(dosageDetails).toHaveAttribute('open')
-    expect(efficacyDetails).not.toHaveAttribute('open')
+    expect(efficacyDetails).toHaveAttribute('open')
     expect(screen.getByRole('button', { name: '복용하기' })).toBeEnabled()
+    expect(screen.getAllByText('AI 분석상 복용을 권장하지 않아 확인 후 기록할 수 있어요.')).toHaveLength(1)
     fireEvent.click(screen.getByRole('button', { name: '복용하기' }))
     expect(screen.getByRole('dialog', { name: 'AI 분석상 복용을 권장하지 않아요' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '취소' }))
@@ -98,5 +99,25 @@ describe('clean medication result hierarchy', () => {
     expect(screen.getByRole('article')).toHaveClass('analysis-card--not-recommended')
     expect(screen.getByText('실제 AI 판단 이유입니다.')).toBeInTheDocument()
     expect(screen.getAllByText('AI 1순위')).toHaveLength(1)
+  })
+
+  it('shows a failed result without an irrelevant duplicate medication warning', () => {
+    const failedResult = {
+      ok: false,
+      pillLabel: '알약 1',
+      error: '사진이 흐리거나 식별 문자가 가려졌을 수 있어요. 다른 사진으로 다시 시도해 주세요.',
+    }
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { results: [failedResult] } }]}>
+        <Routes><Route path="/search/results" element={<SearchResultsPage />} /></Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('heading', { name: '알약 1 - 판별 실패' })).toBeInTheDocument()
+    expect(document.querySelector('.identify-result-state__icon img')).toBeInTheDocument()
+    expect(document.querySelector('.analysis-card--failed .identify-result-state p')?.textContent).toBe('사진이 흐리거나 식별 문자가 가려졌을 수 있어요.\n다른 사진으로 다시 시도해 주세요.')
+    expect(screen.queryByText('AI 분석상 복용을 권장하지 않아 확인 후 기록할 수 있어요.')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '복용하기' })).not.toBeInTheDocument()
   })
 })

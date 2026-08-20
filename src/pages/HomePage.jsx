@@ -1,54 +1,40 @@
 import { Link } from 'react-router-dom'
 import Icon from '../components/ui/Icon.jsx'
-import Badge from '../components/ui/Badge.jsx'
-import PillIllustration from '../components/drugs/PillIllustration.jsx'
-import SearchBar from '../components/drugs/SearchBar.jsx'
 
-const quickActions = [
-  { eyebrow: '사진으로 찾기', title: '알약 사진을 올려\n정보를 확인해요', description: '앞·뒷면을 함께 확인하는 안전한 식별 흐름', to: '/identify/image', icon: 'camera', theme: 'blue' },
-  { eyebrow: '외형으로 찾기', title: '모양과 식별문자로\n찾아볼까요?', description: '기억나는 특징을 차근차근 선택해요', to: '/identify/shape', icon: 'grid', theme: 'navy' },
+const actions = [
+  { title: '사진으로 알약 찾기', description: '알약 사진을 업로드해 빠르게 식별해요', to: '/identify/image', icon: 'camera', theme: 'blue' },
+  { title: '보이스로 알약 찾기', description: '음성으로 증상이나 약 정보를 말해 탐색해요', to: '/identify/voice', icon: 'mic', theme: 'navy' },
 ]
 
 export default function HomePage() {
   return (
     <div className="page page--home">
-      <h1 className="sr-only">알약케어</h1>
-      <section className="home-welcome">
-        <div>
-          <span className="eyebrow">AI로 더 똑똑하게, 오늘의</span>
-          <h2>YAKAL</h2>
-          <p>남아 있는 낱개 알약을 판별하고 복용한 약을 기록해서 의료진에게 정확하게 전달하세요</p>
+      <h2 className="sr-only">알약케어</h2>
+      <section className="home-hero" aria-labelledby="home-title">
+        <div className="home-hero__copy">
+          <h1 id="home-title">YAKAL<span>.</span></h1>
+          <h2><em>약을 찾는</em> 가장 간단한 방법</h2>
+          <i className="home-hero__rule" />
+          <p>사진 또는 음성으로 빠르게 알약을 찾아<br />필요한 정보를 확인해보세요.</p>
         </div>
-        <div className="home-welcome__halo" aria-hidden="true">
-          <span className="home-welcome__ring" />
-          <PillIllustration imprint="PM" size="medium" variant="pink" />
-          <Icon name="sparkle" size={20} />
+        <div className="home-hero__visual" aria-hidden="true">
+          <span className="capsule capsule--large" /><span className="capsule capsule--small" />
+          <span className="capsule capsule--outline" /><span className="home-hero__orbit" /><span className="home-hero__dots" />
         </div>
       </section>
-
-      <SearchBar />
-
-      <section className="quick-actions" aria-labelledby="quick-actions-title">
-        <div className="section-heading section-heading--tight">
-          <div><span className="eyebrow">알약 찾기</span><h2 id="quick-actions-title">어떤 방법으로 찾아볼까요?</h2></div>
-          <Badge tone="blue"><Icon name="sparkle" size={13} /> 간편 검색</Badge>
-        </div>
-        <div className="quick-actions__grid">
-          {quickActions.map((action) => (
-            <Link className={`action-card action-card--${action.theme}`} key={action.to} to={action.to}>
-              <span className="action-card__icon"><Icon name={action.icon} size={24} /></span>
-              <span className="action-card__copy"><span className="action-card__eyebrow">{action.eyebrow}</span><strong>{action.title.split('\n').map((line) => <span key={line}>{line}</span>)}</strong><small>{action.description}</small></span>
-              <span className="action-card__arrow"><Icon name="arrowRight" size={18} /></span>
+      <section className="home-actions" aria-labelledby="home-actions-title">
+        <div className="home-actions__heading"><i /><h2 id="home-actions-title">어떤 방법으로 찾아볼까요?</h2></div>
+        <div className="home-actions__grid">
+          {actions.map((action) => (
+            <Link className={`home-action home-action--${action.theme}`} key={action.to} to={action.to}>
+              <span className="home-action__icon"><Icon name={action.icon} size={25} /></span>
+              <span className="home-action__copy"><strong>{action.title}</strong><span>{action.description}</span></span>
+              {action.theme === 'blue' ? <span className="home-action__camera-frame" aria-hidden="true"><span className="home-action__capsule" /></span> : <span className="home-action__wave" aria-hidden="true">{Array.from({ length: 19 }, (_, index) => <i key={index} />)}</span>}
+              <span className="home-action__arrow"><Icon name="arrowRight" size={18} /></span>
             </Link>
           ))}
         </div>
       </section>
-
-      <section className="support-grid" aria-label="도움 기능">
-        <Link className="support-card support-card--mint" to="/symptoms"><span className="support-card__icon"><Icon name="notes" size={21} /></span><span><strong>증상 기록하기</strong><small>지금 상태를 정리해요</small></span><Icon name="chevronRight" size={17} /></Link>
-      </section>
-
-      <aside className="reference-note"><Icon name="shield" size={18} /><p>본 서비스의 정보는 참고용입니다. 복용 전 반드시 의사·약사와 상담하세요.</p></aside>
     </div>
   )
 }
