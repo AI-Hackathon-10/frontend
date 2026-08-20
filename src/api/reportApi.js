@@ -7,3 +7,10 @@ export function getReports() {
 export function getReport(reportId) {
   return apiRequest(`/api/reports/${reportId}`)
 }
+
+export function createReport({ symptomRecordId, medicationId }) {
+  return apiRequest('/api/reports', {
+    method: 'POST',
+    body: { symptomRecordId, medicationId },
+  })
+}

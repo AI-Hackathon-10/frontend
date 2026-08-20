@@ -7,7 +7,7 @@ import { useAuth } from '../components/user/AuthProvider.jsx'
 import { getReport, getReports } from '../api/reportApi.js'
 
 function toImageUrl(value) {
-  return typeof value === 'string' && /^https?:\/\//.test(value) ? value : undefined
+  return typeof value === 'string' && /^https?:\/\//i.test(value) ? value : undefined
 }
 
 function mapReport(report, user) {
@@ -22,7 +22,6 @@ function mapReport(report, user) {
     userName: report.userName ?? user?.name,
     birthDate: user?.birthDate,
     startedAt: report.startedAt,
-    memo: report.memo,
     drugName: medication.drugName ?? '-',
     takenAt: medication.takenAt,
     frontImageUrl: toImageUrl(medication.frontImageUrl),
@@ -89,7 +88,7 @@ export default function SymptomPage() {
           </div>
           <Badge tone="blue">{reports.length}건</Badge>
         </div>
-        <p className="account-section__description">기록된 증상과 메모를 한눈에 확인할 수 있어요.</p>
+        <p className="account-section__description">기록된 증상과 복용 정보를 한눈에 확인할 수 있어요.</p>
         {isLoading ? <p className="account-section__description" role="status">증상 리포트를 불러오는 중입니다.</p> : null}
         {isDetailLoading ? <p className="account-section__description" role="status">증상 문서를 불러오는 중입니다.</p> : null}
         {error ? <p className="account-section__description" role="alert">{error}</p> : null}

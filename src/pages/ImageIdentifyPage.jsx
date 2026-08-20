@@ -16,7 +16,16 @@ import {
   uploadMedicationImage,
 } from "../api/medicationApi.js";
 import { ApiError } from "../api/client.js";
-import { saveMedicationAnalysisResults } from "../utils/medicationAnalysisStorage.js";
+import {
+  clearMedicationAnalysisResults,
+  createMedicationAnalysisRunId,
+  saveMedicationAnalysisResults,
+} from "../utils/medicationAnalysisStorage.js";
+import {
+  buildMedicationIdsByResultIndex,
+  clearReportCreationContext,
+  saveReportCreationContext,
+} from "../utils/reportCreationStorage.js";
 
 export function getRelativeStartedAt(hoursAgo, now = Date.now()) {
   return new Date(now - Number(hoursAgo) * 60 * 60 * 1000).toISOString();
@@ -99,12 +108,15 @@ export default function ImageIdentifyPage() {
     setPillSets((current) => current.filter((pillSet) => pillSet.id !== setId));
   };
 
-  async function uploadOnePillSet(pillSet, index, startedAt) {
+  async function uploadOnePillSet(pillSet, index, startedAt, symptomTypes) {
     const pillLabel = `알약 ${index + 1}`;
+    let medicationId = null;
 
     try {
-      const { requestId, frontUploadUrl, backUploadUrl } =
+      const uploadContext =
         await getPresignedUrl();
+      ({ medicationId } = uploadContext);
+      const { requestId, frontUploadUrl, backUploadUrl } = uploadContext;
 
       await Promise.all([
         uploadMedicationImage(frontUploadUrl, pillSet.front),
@@ -113,7 +125,7 @@ export default function ImageIdentifyPage() {
 
       const result = await identifyMedication({
         requestId,
-        symptomTypes: toMedicationSymptomTypes(selectedSymptoms),
+        symptomTypes,
         startedAt,
       });
 
@@ -121,22 +133,28 @@ export default function ImageIdentifyPage() {
 
       console.log(`[DEBUG] ${pillLabel} API 응답:`, JSON.stringify(result));
 
-      return items.map((item) => ({
-        ...item,
-        pillLabel,
-      }));
+      return {
+        medicationId,
+        results: items.map((item) => ({
+          ...item,
+          pillLabel,
+        })),
+      };
     } catch (e) {
       console.error(`[DEBUG] ${pillLabel} API 에러:`, e);
 
-      return [
-        {
-          ok: false,
-          pillLabel,
-          itemName: null,
-          error:
-            e instanceof ApiError ? e.message : "분석 중 오류가 발생했습니다.",
-        },
-      ];
+      return {
+        medicationId,
+        results: [
+          {
+            ok: false,
+            pillLabel,
+            itemName: null,
+            error:
+              e instanceof ApiError ? e.message : "분석 중 오류가 발생했습니다.",
+          },
+        ],
+      };
     }
   }
 
@@ -178,20 +196,27 @@ export default function ImageIdentifyPage() {
 
     setIsSubmitting(true);
     setErrorMessage(null);
+    clearMedicationAnalysisResults();
+    clearReportCreationContext();
 
     try {
       const startedAt =
         onsetInputMode === "relative"
           ? getRelativeStartedAt(onsetHoursAgo)
           : new Date(`${onsetDate}T${onsetTime}`).toISOString();
+      const symptomTypes = toMedicationSymptomTypes(selectedSymptoms);
+      const analysisRunId = createMedicationAnalysisRunId();
 
-      const results = await Promise.all(
+      const resultGroups = await Promise.all(
         readySets.map((pillSet, index) =>
-          uploadOnePillSet(pillSet, index, startedAt),
+          uploadOnePillSet(pillSet, index, startedAt, symptomTypes),
         ),
       );
 
-      const analysisResults = saveMedicationAnalysisResults(results);
+      const analysisResults = saveMedicationAnalysisResults(
+        resultGroups.flatMap((group) => group.results),
+        { analysisRunId },
+      );
 
       if (analysisResults.length === 0) {
         throw new ApiError(
@@ -201,8 +226,18 @@ export default function ImageIdentifyPage() {
         );
       }
 
+      saveReportCreationContext({
+        analysisRunId,
+        medicationIdsByResultIndex:
+          buildMedicationIdsByResultIndex(resultGroups),
+        symptomTypes,
+        startedAt,
+        memo,
+      });
+
       navigate("/search/results", {
         state: {
+          analysisRunId,
           symptoms: selectedSymptoms,
           results: analysisResults,
           memo,

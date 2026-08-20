@@ -1,9 +1,22 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ImageIdentifyPage, { getRelativeStartedAt } from './ImageIdentifyPage.jsx'
+import { getPresignedUrl, identifyMedication, uploadMedicationImage } from '../api/medicationApi.js'
+import { loadReportCreationContext } from '../utils/reportCreationStorage.js'
+
+vi.mock('../api/medicationApi.js', () => ({
+  getPresignedUrl: vi.fn(),
+  identifyMedication: vi.fn(),
+  uploadMedicationImage: vi.fn(),
+}))
 
 describe('ImageIdentifyPage onset input', () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+    sessionStorage.clear()
+  })
+
   it('defaults to now and only shows pickers in manual mode', () => {
     render(
       <MemoryRouter>
@@ -72,5 +85,53 @@ describe('ImageIdentifyPage onset input', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '재채기' }))
     expect(screen.getByRole('button', { name: '몸살' })).toBeEnabled()
+  })
+
+  it('keeps the presign medication id aligned with every returned candidate', async () => {
+    getPresignedUrl.mockResolvedValue({
+      medicationId: 29,
+      requestId: 'request-1',
+      frontUploadUrl: 'https://upload.example.com/front',
+      backUploadUrl: 'https://upload.example.com/back',
+    })
+    uploadMedicationImage.mockResolvedValue(undefined)
+    identifyMedication.mockResolvedValue([
+      { itemSeq: 'candidate-1', itemName: '후보 A' },
+      { itemSeq: 'candidate-2', itemName: '후보 B' },
+    ])
+
+    render(
+      <MemoryRouter initialEntries={['/identify/image']}>
+        <Routes>
+          <Route path="/identify/image" element={<ImageIdentifyPage />} />
+          <Route path="/search/results" element={<h1>판별 결과 도착</h1>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '두통' }))
+    const frontFile = new File(['front'], 'front.jpg', { type: 'image/jpeg' })
+    const backFile = new File(['back'], 'back.jpg', { type: 'image/jpeg' })
+
+    fireEvent.click(screen.getByRole('button', { name: '앞면 이미지 선택 영역' }))
+    fireEvent.change(screen.getByLabelText('앞면 사진 보관함에서 선택하기'), { target: { files: [frontFile] } })
+    fireEvent.click(screen.getByRole('button', { name: '뒷면 이미지 선택 영역' }))
+    fireEvent.change(screen.getByLabelText('뒷면 사진 보관함에서 선택하기'), { target: { files: [backFile] } })
+    fireEvent.click(screen.getByRole('button', { name: '알약 찾기' }))
+
+    expect(await screen.findByRole('heading', { name: '판별 결과 도착' })).toBeInTheDocument()
+    const context = loadReportCreationContext()
+    expect(context).toEqual({
+      analysisRunId: expect.any(String),
+      medicationIdsByResultIndex: [29, 29],
+      symptomTypes: ['HEADACHE'],
+      startedAt: expect.any(String),
+      memo: '',
+    })
+    expect(identifyMedication).toHaveBeenCalledWith({
+      requestId: 'request-1',
+      symptomTypes: ['HEADACHE'],
+      startedAt: context.startedAt,
+    })
   })
 })

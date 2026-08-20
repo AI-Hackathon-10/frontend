@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   MEDICATION_ANALYSIS_STORAGE_KEY,
   clearMedicationAnalysisResults,
+  createMedicationAnalysisRunId,
+  loadMedicationAnalysisSnapshot,
   loadMedicationAnalysisResults,
   saveMedicationAnalysisResults,
 } from './medicationAnalysisStorage.js'
@@ -22,5 +24,15 @@ describe('medication analysis session storage', () => {
     sessionStorage.setItem(MEDICATION_ANALYSIS_STORAGE_KEY, JSON.stringify([{ itemName: '약' }]))
     clearMedicationAnalysisResults()
     expect(loadMedicationAnalysisResults()).toEqual([])
+  })
+
+  it('binds stored results to a unique analysis run', () => {
+    const analysisRunId = createMedicationAnalysisRunId()
+    const results = [{ itemName: '첫 번째 약' }, { itemName: '두 번째 약' }]
+
+    saveMedicationAnalysisResults(results, { analysisRunId })
+
+    expect(loadMedicationAnalysisSnapshot()).toEqual({ analysisRunId, results })
+    expect(loadMedicationAnalysisResults()).toEqual(results)
   })
 })

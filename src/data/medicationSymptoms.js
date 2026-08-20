@@ -26,10 +26,16 @@ const SYMPTOM_TYPE_MAP = {
   '오한': ['CHILLS'],
 }
 
+const MEDICATION_SYMPTOM_TYPE_SET = new Set(Object.values(SYMPTOM_TYPE_MAP).flat())
+
 export function toMedicationSymptomTypes(symptoms) {
   return [...new Set(symptoms.flatMap((symptom) => SYMPTOM_TYPE_MAP[symptom] ?? []))]
 }
 
 export function findUnsupportedMedicationSymptoms(symptoms) {
   return symptoms.filter((symptom) => !SYMPTOM_TYPE_MAP[symptom])
+}
+
+export function isMedicationSymptomType(value) {
+  return MEDICATION_SYMPTOM_TYPE_SET.has(value)
 }

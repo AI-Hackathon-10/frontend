@@ -55,7 +55,12 @@ describe('SymptomPage report API integration', () => {
       symptomTypes: ['두통', '발열'],
       memo: '밤부터 열감이 있었습니다.',
       summary: '상세 증상 요약',
-      medication: { drugName: '프리메정', takenAt: '2026-08-20T00:30:00' },
+      medication: {
+        drugName: '프리메정',
+        takenAt: '2026-08-20T00:30:00',
+        frontImageUrl: 'HTTPS://example.com/front.jpg',
+        backImageUrl: 'medications/7/back.jpg',
+      },
     })
 
     renderPage()
@@ -65,6 +70,8 @@ describe('SymptomPage report API integration', () => {
     await waitFor(() => expect(getReport).toHaveBeenCalledWith(7))
     expect(await screen.findByRole('dialog', { name: '증상 기록 문서 보기' })).toBeInTheDocument()
     expect(screen.getByText('프리메정')).toBeInTheDocument()
-    expect(screen.getByText('밤부터 열감이 있었습니다.')).toBeInTheDocument()
+    expect(screen.queryByText('밤부터 열감이 있었습니다.')).not.toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '약 앞면 이미지' })).toHaveAttribute('src', 'HTTPS://example.com/front.jpg')
+    expect(screen.getByRole('img', { name: '약 뒷면 이미지' })).toHaveClass('symptom-document__image-placeholder')
   })
 })

@@ -1,7 +1,31 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SearchResultsPage from './SearchResultsPage.jsx'
+import { createSymptomRecord } from '../api/symptomApi.js'
+import { markMedicationTaken } from '../api/medicationApi.js'
+import { createReport, getReports } from '../api/reportApi.js'
+import { loadMedicationAnalysisResults, saveMedicationAnalysisResults } from '../utils/medicationAnalysisStorage.js'
+import {
+  REPORT_CREATION_STORAGE_KEY,
+  loadReportCreationContext,
+  saveReportCreationContext,
+} from '../utils/reportCreationStorage.js'
+
+vi.mock('../api/symptomApi.js', () => ({
+  createSymptomRecord: vi.fn(),
+}))
+
+vi.mock('../api/medicationApi.js', () => ({
+  markMedicationTaken: vi.fn(),
+}))
+
+vi.mock('../api/reportApi.js', () => ({
+  createReport: vi.fn(),
+  getReports: vi.fn(),
+}))
+
+const ANALYSIS_RUN_ID = 'run-20260820-a'
 
 const result = {
   itemSeq: '202106092',
@@ -27,11 +51,22 @@ const result = {
 }
 
 describe('clean medication result hierarchy', () => {
-  beforeEach(() => sessionStorage.clear())
+  beforeEach(() => {
+    vi.resetAllMocks()
+    sessionStorage.clear()
+    getReports.mockResolvedValue([])
+    saveReportCreationContext({
+      analysisRunId: ANALYSIS_RUN_ID,
+      medicationIdsByResultIndex: [29],
+      symptomTypes: ['HEADACHE', 'INDIGESTION', 'HEARTBURN'],
+      startedAt: '2026-08-20T10:30:00.000Z',
+      memo: '머리가 아픕니다.',
+    })
+  })
 
   it('prioritizes identity, two metrics, and the actual AI reason', () => {
     render(
-      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { results: [result], symptoms: ['두통', '소화불량·속쓰림'] } }]}>
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { analysisRunId: ANALYSIS_RUN_ID, results: [result], symptoms: ['두통', '소화불량·속쓰림'] } }]}>
         <Routes><Route path="/search/results" element={<SearchResultsPage />} /></Routes>
       </MemoryRouter>,
     )
@@ -60,7 +95,6 @@ describe('clean medication result hierarchy', () => {
     expect(dosageDetails).toHaveAttribute('open')
     expect(efficacyDetails).toHaveAttribute('open')
     expect(screen.getByRole('button', { name: '복용하기' })).toBeEnabled()
-    expect(screen.getAllByText('AI 분석상 복용을 권장하지 않아 확인 후 기록할 수 있어요.')).toHaveLength(1)
     fireEvent.click(screen.getByRole('button', { name: '복용하기' }))
     expect(screen.getByRole('dialog', { name: 'AI 분석상 복용을 권장하지 않아요' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '취소' }))
@@ -84,7 +118,7 @@ describe('clean medication result hierarchy', () => {
     }
 
     render(
-      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { results: [result, recommendedResult] } }]}>
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { analysisRunId: ANALYSIS_RUN_ID, results: [result, recommendedResult] } }]}>
         <Routes><Route path="/search/results" element={<SearchResultsPage />} /></Routes>
       </MemoryRouter>,
     )
@@ -109,7 +143,7 @@ describe('clean medication result hierarchy', () => {
     }
 
     render(
-      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { results: [failedResult] } }]}>
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { analysisRunId: ANALYSIS_RUN_ID, results: [failedResult] } }]}>
         <Routes><Route path="/search/results" element={<SearchResultsPage />} /></Routes>
       </MemoryRouter>,
     )
@@ -119,5 +153,220 @@ describe('clean medication result hierarchy', () => {
     expect(document.querySelector('.analysis-card--failed .identify-result-state p')?.textContent).toBe('사진이 흐리거나 식별 문자가 가려졌을 수 있어요.\n다른 사진으로 다시 시도해 주세요.')
     expect(screen.queryByText('AI 분석상 복용을 권장하지 않아 확인 후 기록할 수 있어요.')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '복용하기' })).not.toBeInTheDocument()
+  })
+
+  it('creates the symptom, intake, and report in order and navigates immediately', async () => {
+    let resolveSymptom
+    createSymptomRecord.mockReturnValue(new Promise((resolve) => {
+      resolveSymptom = resolve
+    }))
+    markMedicationTaken.mockResolvedValue({ medicationId: 29 })
+    createReport.mockResolvedValue({ reportId: 7 })
+    saveMedicationAnalysisResults([result], { analysisRunId: ANALYSIS_RUN_ID })
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { analysisRunId: ANALYSIS_RUN_ID, results: [result], symptoms: ['두통', '소화불량·속쓰림'] } }]}>
+        <Routes>
+          <Route path="/search/results" element={<SearchResultsPage />} />
+          <Route path="/symptoms" element={<h1>증상 기록 목록</h1>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '복용하기' }))
+    fireEvent.click(screen.getByRole('button', { name: '복용 기록하기' }))
+
+    expect(createSymptomRecord).toHaveBeenCalledWith({
+      symptomTypes: ['HEADACHE', 'INDIGESTION', 'HEARTBURN'],
+      startedAt: '2026-08-20T10:30:00.000Z',
+      memo: '머리가 아픕니다.',
+    })
+    const submittingButton = screen.getByRole('button', { name: '기록 중...' })
+    expect(submittingButton).toBeDisabled()
+    fireEvent.click(submittingButton)
+    expect(createSymptomRecord).toHaveBeenCalledTimes(1)
+
+    resolveSymptom({ symptomRecordId: 17 })
+
+    expect(await screen.findByRole('heading', { name: '증상 기록 목록' })).toBeInTheDocument()
+    expect(markMedicationTaken).toHaveBeenCalledWith(29)
+    expect(createReport).toHaveBeenCalledWith({ symptomRecordId: 17, medicationId: 29 })
+    expect(createSymptomRecord.mock.invocationCallOrder[0]).toBeLessThan(markMedicationTaken.mock.invocationCallOrder[0])
+    expect(markMedicationTaken.mock.invocationCallOrder[0]).toBeLessThan(createReport.mock.invocationCallOrder[0])
+    expect(loadReportCreationContext()).toBeNull()
+    expect(loadMedicationAnalysisResults()).toEqual([])
+  })
+
+  it('keeps the confirmation open and shows an error when creation fails', async () => {
+    createSymptomRecord.mockRejectedValue(new Error('network failure'))
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { analysisRunId: ANALYSIS_RUN_ID, results: [result], symptoms: ['두통'] } }]}>
+        <Routes><Route path="/search/results" element={<SearchResultsPage />} /></Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '복용하기' }))
+    fireEvent.click(screen.getByRole('button', { name: '복용 기록하기' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('복용 기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+    expect(screen.getByRole('dialog', { name: 'AI 분석상 복용을 권장하지 않아요' })).toBeInTheDocument()
+    expect(markMedicationTaken).not.toHaveBeenCalled()
+    expect(createReport).not.toHaveBeenCalled()
+    expect(loadReportCreationContext()).not.toBeNull()
+  })
+
+  it('does not call creation APIs when the selected result has no medication id', async () => {
+    saveReportCreationContext({
+      analysisRunId: ANALYSIS_RUN_ID,
+      medicationIdsByResultIndex: [null],
+      symptomTypes: ['HEADACHE'],
+      startedAt: '2026-08-20T10:30:00.000Z',
+      memo: '',
+    })
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { analysisRunId: ANALYSIS_RUN_ID, results: [result], symptoms: ['두통'] } }]}>
+        <Routes><Route path="/search/results" element={<SearchResultsPage />} /></Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '복용하기' }))
+    fireEvent.click(screen.getByRole('button', { name: '복용 기록하기' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('복용 기록 정보를 찾을 수 없습니다. 알약을 다시 분석해 주세요.')
+    expect(createSymptomRecord).not.toHaveBeenCalled()
+    expect(markMedicationTaken).not.toHaveBeenCalled()
+    expect(createReport).not.toHaveBeenCalled()
+  })
+
+  it('refuses writes when browser history shows a different analysis run', async () => {
+    saveReportCreationContext({
+      analysisRunId: 'run-20260820-b',
+      medicationIdsByResultIndex: [88],
+      symptomTypes: ['HEADACHE'],
+      startedAt: '2026-08-20T10:30:00.000Z',
+      memo: '',
+    })
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { analysisRunId: ANALYSIS_RUN_ID, results: [result], symptoms: ['두통'] } }]}>
+        <Routes><Route path="/search/results" element={<SearchResultsPage />} /></Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '복용하기' }))
+    fireEvent.click(screen.getByRole('button', { name: '복용 기록하기' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('복용 기록 정보를 찾을 수 없습니다. 알약을 다시 분석해 주세요.')
+    expect(createSymptomRecord).not.toHaveBeenCalled()
+    expect(markMedicationTaken).not.toHaveBeenCalled()
+    expect(createReport).not.toHaveBeenCalled()
+  })
+
+  it('refuses every write when stored symptom types contain duplicates', async () => {
+    sessionStorage.setItem(REPORT_CREATION_STORAGE_KEY, JSON.stringify({
+      analysisRunId: ANALYSIS_RUN_ID,
+      medicationIdsByResultIndex: [29],
+      symptomTypes: ['HEADACHE', 'HEADACHE'],
+      startedAt: '2026-08-20T10:30:00.000Z',
+      memo: '',
+    }))
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { analysisRunId: ANALYSIS_RUN_ID, results: [result], symptoms: ['두통'] } }]}>
+        <Routes><Route path="/search/results" element={<SearchResultsPage />} /></Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '복용하기' }))
+    fireEvent.click(screen.getByRole('button', { name: '복용 기록하기' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('복용 기록 정보를 찾을 수 없습니다. 알약을 다시 분석해 주세요.')
+    expect(createSymptomRecord).not.toHaveBeenCalled()
+    expect(markMedicationTaken).not.toHaveBeenCalled()
+    expect(createReport).not.toHaveBeenCalled()
+  })
+
+  it('reuses the symptom record when intake fails and the user retries', async () => {
+    createSymptomRecord.mockResolvedValue({ symptomRecordId: 17 })
+    markMedicationTaken.mockRejectedValueOnce(new Error('intake failure')).mockResolvedValue({ medicationId: 29 })
+    createReport.mockResolvedValue({ reportId: 7 })
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { analysisRunId: ANALYSIS_RUN_ID, results: [result], symptoms: ['두통'] } }]}>
+        <Routes>
+          <Route path="/search/results" element={<SearchResultsPage />} />
+          <Route path="/symptoms" element={<h1>증상 기록 목록</h1>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '복용하기' }))
+    fireEvent.click(screen.getByRole('button', { name: '복용 기록하기' }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '복용 기록하기' }))
+
+    expect(await screen.findByRole('heading', { name: '증상 기록 목록' })).toBeInTheDocument()
+    expect(createSymptomRecord).toHaveBeenCalledTimes(1)
+    expect(markMedicationTaken).toHaveBeenCalledTimes(2)
+    expect(createReport).toHaveBeenCalledTimes(1)
+  })
+
+  it('skips completed symptom and intake writes when report creation is retried', async () => {
+    createSymptomRecord.mockResolvedValue({ symptomRecordId: 17 })
+    markMedicationTaken.mockResolvedValue({ medicationId: 29 })
+    createReport.mockRejectedValueOnce(new Error('report failure')).mockResolvedValue({ reportId: 7 })
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { analysisRunId: ANALYSIS_RUN_ID, results: [result], symptoms: ['두통'] } }]}>
+        <Routes>
+          <Route path="/search/results" element={<SearchResultsPage />} />
+          <Route path="/symptoms" element={<h1>증상 기록 목록</h1>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '복용하기' }))
+    fireEvent.click(screen.getByRole('button', { name: '복용 기록하기' }))
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '복용 기록하기' }))
+
+    expect(await screen.findByRole('heading', { name: '증상 기록 목록' })).toBeInTheDocument()
+    expect(createSymptomRecord).toHaveBeenCalledTimes(1)
+    expect(markMedicationTaken).toHaveBeenCalledTimes(1)
+    expect(createReport).toHaveBeenCalledTimes(2)
+  })
+
+  it('treats a report as created when a lost response is confirmed by the list API', async () => {
+    createSymptomRecord.mockResolvedValue({ symptomRecordId: 17 })
+    markMedicationTaken.mockResolvedValue({ medicationId: 29 })
+    createReport.mockRejectedValue(new Error('response lost'))
+    getReports.mockResolvedValue([
+      {
+        reportId: 7,
+        symptomRecordId: 17,
+        medication: { medicationId: 29 },
+      },
+    ])
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/search/results', state: { analysisRunId: ANALYSIS_RUN_ID, results: [result], symptoms: ['두통'] } }]}>
+        <Routes>
+          <Route path="/search/results" element={<SearchResultsPage />} />
+          <Route path="/symptoms" element={<h1>증상 기록 목록</h1>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '복용하기' }))
+    fireEvent.click(screen.getByRole('button', { name: '복용 기록하기' }))
+
+    expect(await screen.findByRole('heading', { name: '증상 기록 목록' })).toBeInTheDocument()
+    expect(getReports).toHaveBeenCalledTimes(1)
+    expect(createSymptomRecord).toHaveBeenCalledTimes(1)
+    expect(markMedicationTaken).toHaveBeenCalledTimes(1)
+    expect(createReport).toHaveBeenCalledTimes(1)
+    expect(loadReportCreationContext()).toBeNull()
   })
 })

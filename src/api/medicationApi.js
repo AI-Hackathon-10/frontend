@@ -72,3 +72,10 @@ export function identifyMedication({ requestId, symptomTypes, startedAt }) {
     body: { requestId, symptomTypes, startedAt },
   })
 }
+
+export function markMedicationTaken(medicationId) {
+  return apiRequest(`/api/medications/${medicationId}/intake`, {
+    method: 'POST',
+    body: {},
+  })
+}
