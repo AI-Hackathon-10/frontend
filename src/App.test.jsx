@@ -39,7 +39,7 @@ describe('app shell routing contract', () => {
   })
 
   it.each([
-    ['/', '오늘의 알약 케어'],
+    ['/', 'YAKAL'],
     ['/identify/image', '사진으로 알약 정보 찾기'],
     ['/identify/shape', '알약 외형으로 찾기'],
     ['/search/results', '판별 결과'],
@@ -372,7 +372,7 @@ describe('authentication pages', () => {
     fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
     fireEvent.click(screen.getByRole('button', { name: '로그인' }))
 
-    expect(screen.getByRole('heading', { name: '오늘의 알약 케어' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'YAKAL' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '내 메뉴' })).toHaveAttribute('aria-expanded', 'false')
   })
 
@@ -427,7 +427,7 @@ describe('authentication pages', () => {
         </MemoryRouter>,
       )
 
-      await waitFor(() => expect(screen.getByRole('heading', { name: '오늘의 알약 케어' })).toBeInTheDocument())
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'YAKAL' })).toBeInTheDocument())
       fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
 
       const panel = document.querySelector('.user-menu__panel')
@@ -517,7 +517,7 @@ describe('authentication pages', () => {
     expect(screen.getByRole('dialog', { name: '로그아웃 확인' })).toBeInTheDocument()
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('dialog', { name: '로그아웃 확인' })).not.toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '오늘의 알약 케어' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'YAKAL' })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '내 메뉴' }))
     fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))

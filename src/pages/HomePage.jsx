@@ -16,8 +16,8 @@ export default function HomePage() {
       <section className="home-welcome">
         <div>
           <span className="eyebrow">AI로 더 똑똑하게, 오늘의</span>
-          <h2>오늘의 알약 케어</h2>
-          <p>아픈 순간에도 필요한 정보만 편안하게 확인할 수 있도록 도와드려요.</p>
+          <h2>YAKAL</h2>
+          <p>남아 있는 낱개 알약을 판별하고 복용한 약을 기록해서 의료진에게 정확하게 전달하세요</p>
         </div>
         <div className="home-welcome__halo" aria-hidden="true">
           <span className="home-welcome__ring" />
