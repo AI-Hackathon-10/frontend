@@ -3,6 +3,7 @@ import AppShell from './components/layout/AppShell.jsx'
 import { AuthProvider, useAuth } from './components/user/AuthProvider.jsx'
 import HomePage from './pages/HomePage.jsx'
 import ImageIdentifyPage from './pages/ImageIdentifyPage.jsx'
+import VoiceIdentifyPage from './pages/VoiceIdentifyPage.jsx'
 import SearchResultsPage from './pages/SearchResultsPage.jsx'
 import ShapeSearchPage from './pages/ShapeSearchPage.jsx'
 import SymptomPage from './pages/SymptomPage.jsx'
@@ -31,6 +32,7 @@ export default function App() {
           <Route element={<RequireAuth />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/identify/image" element={<ImageIdentifyPage />} />
+            <Route path="/identify/voice" element={<VoiceIdentifyPage />} />
             <Route path="/identify/shape" element={<ShapeSearchPage />} />
             <Route path="/search/results" element={<SearchResultsPage />} />
             <Route path="/drugs/:drugId" element={<DrugDetailPage />} />

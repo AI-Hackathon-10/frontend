@@ -18,47 +18,90 @@ import {
 import { ApiError } from "../api/client.js";
 import { saveMedicationAnalysisResults } from "../utils/medicationAnalysisStorage.js";
 
+export function getRelativeStartedAt(hoursAgo, now = Date.now()) {
+  return new Date(now - Number(hoursAgo) * 60 * 60 * 1000).toISOString();
+}
+
+function getCurrentDateTimeInputValues(now = new Date()) {
+  const pad = (value) => String(value).padStart(2, "0");
+
+  return {
+    date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+      now.getDate(),
+    )}`,
+    time: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
+  };
+}
+
 export default function ImageIdentifyPage() {
   const navigate = useNavigate();
+
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
+  const [onsetInputMode, setOnsetInputMode] = useState("relative");
+  const [isManualPickerOpen, setIsManualPickerOpen] = useState(false);
+  const [onsetHoursAgo, setOnsetHoursAgo] = useState(0);
   const [onsetDate, setOnsetDate] = useState("");
   const [onsetTime, setOnsetTime] = useState("");
   const [memo, setMemo] = useState("");
+
   const nextPillSetId = useRef(2);
+
   const [pillSets, setPillSets] = useState([
-    { id: 1, front: null, back: null },
+    {
+      id: 1,
+      front: null,
+      back: null,
+    },
   ]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
 
   const handleToggleSymptom = (symptom) => {
-    setSelectedSymptoms((current) =>
-      current.includes(symptom)
-        ? current.filter((item) => item !== symptom)
-        : [...current, symptom],
-    );
+    setSelectedSymptoms((current) => {
+      if (current.includes(symptom)) {
+        return current.filter((item) => item !== symptom);
+      }
+
+      return current.length < 10 ? [...current, symptom] : current;
+    });
   };
 
   const handleUploadChange = (setId, side, file) => {
     setPillSets((current) =>
       current.map((pillSet) =>
-        pillSet.id === setId ? { ...pillSet, [side]: file } : pillSet,
+        pillSet.id === setId
+          ? {
+              ...pillSet,
+              [side]: file,
+            }
+          : pillSet,
       ),
     );
   };
 
   const handleAddPillSet = () => {
     const id = nextPillSetId.current;
+
     nextPillSetId.current += 1;
-    setPillSets((current) => [...current, { id, front: null, back: null }]);
+
+    setPillSets((current) => [
+      ...current,
+      {
+        id,
+        front: null,
+        back: null,
+      },
+    ]);
   };
 
   const handleRemovePillSet = (setId) => {
     setPillSets((current) => current.filter((pillSet) => pillSet.id !== setId));
   };
 
-  async function uploadOnePillSet(pillSet, index) {
+  async function uploadOnePillSet(pillSet, index, startedAt) {
     const pillLabel = `알약 ${index + 1}`;
+
     try {
       const { requestId, frontUploadUrl, backUploadUrl } =
         await getPresignedUrl();
@@ -68,11 +111,6 @@ export default function ImageIdentifyPage() {
         uploadMedicationImage(backUploadUrl, pillSet.back),
       ]);
 
-      const startedAt =
-        onsetDate && onsetTime
-          ? new Date(`${onsetDate}T${onsetTime}`).toISOString()
-          : null;
-
       const result = await identifyMedication({
         requestId,
         symptomTypes: toMedicationSymptomTypes(selectedSymptoms),
@@ -80,40 +118,59 @@ export default function ImageIdentifyPage() {
       });
 
       const items = Array.isArray(result) ? result : [result];
+
       console.log(`[DEBUG] ${pillLabel} API 응답:`, JSON.stringify(result));
-      return items.map((item) => ({ ...item, pillLabel }));
+
+      return items.map((item) => ({
+        ...item,
+        pillLabel,
+      }));
     } catch (e) {
       console.error(`[DEBUG] ${pillLabel} API 에러:`, e);
+
       return [
         {
           ok: false,
           pillLabel,
           itemName: null,
           error:
-            e instanceof ApiError
-              ? e.message
-              : "분석 중 오류가 발생했습니다.",
+            e instanceof ApiError ? e.message : "분석 중 오류가 발생했습니다.",
         },
       ];
     }
   }
 
   const handleFindPill = async () => {
-    if (selectedSymptoms.length === 0) return;
-    if (!onsetDate || !onsetTime) {
+    if (selectedSymptoms.length === 0) {
+      return;
+    }
+
+    if (onsetInputMode === "manual" && (!onsetDate || !onsetTime)) {
       setErrorMessage("증상 발현 날짜와 시간을 선택해 주세요.");
       return;
     }
 
-    const unsupportedSymptoms = findUnsupportedMedicationSymptoms(selectedSymptoms);
+    if (onsetInputMode === "relative" && onsetHoursAgo < 0) {
+      setErrorMessage("증상 발현 시간은 0시간 이상 입력해 주세요.");
+      return;
+    }
+
+    const unsupportedSymptoms =
+      findUnsupportedMedicationSymptoms(selectedSymptoms);
+
     if (unsupportedSymptoms.length > 0) {
       setErrorMessage(
-        `현재 분석 API에서 지원하지 않는 증상입니다: ${unsupportedSymptoms.join(", ")}`,
+        `현재 분석 API에서 지원하지 않는 증상입니다: ${unsupportedSymptoms.join(
+          ", ",
+        )}`,
       );
       return;
     }
 
-    const readySets = pillSets.filter((p) => p.front && p.back);
+    const readySets = pillSets.filter(
+      (pillSet) => pillSet.front && pillSet.back,
+    );
+
     if (readySets.length === 0) {
       setErrorMessage("앞면과 뒷면 사진을 모두 추가해 주세요.");
       return;
@@ -123,9 +180,17 @@ export default function ImageIdentifyPage() {
     setErrorMessage(null);
 
     try {
-      // 모든 알약 세트를 순차/병렬로 업로드 및 분석 요청
-      const results = await Promise.all(readySets.map((ps, i) => uploadOnePillSet(ps, i)));
-      const startedAt = new Date(`${onsetDate}T${onsetTime}`).toISOString();
+      const startedAt =
+        onsetInputMode === "relative"
+          ? getRelativeStartedAt(onsetHoursAgo)
+          : new Date(`${onsetDate}T${onsetTime}`).toISOString();
+
+      const results = await Promise.all(
+        readySets.map((pillSet, index) =>
+          uploadOnePillSet(pillSet, index, startedAt),
+        ),
+      );
+
       const analysisResults = saveMedicationAnalysisResults(results);
 
       if (analysisResults.length === 0) {
@@ -136,7 +201,6 @@ export default function ImageIdentifyPage() {
         );
       }
 
-      // 결과 페이지로 획득한 데이터와 함께 라우팅
       navigate("/search/results", {
         state: {
           symptoms: selectedSymptoms,
@@ -146,11 +210,11 @@ export default function ImageIdentifyPage() {
         },
       });
     } catch (e) {
-      // 💡 이제 정상적으로 ApiError 규격을 타기 때문에 백엔드 에러 메시지가 온전히 출력됩니다.
       const message =
         e instanceof ApiError
           ? e.message
           : "분석 중 오류가 발생했어요. 다시 시도해 주세요.";
+
       setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
@@ -171,6 +235,8 @@ export default function ImageIdentifyPage() {
         primarySymptoms={PRIMARY_SYMPTOMS}
         selected={selectedSymptoms}
         onToggle={handleToggleSymptom}
+        maxSelected={10}
+        required
       />
 
       <section
@@ -179,34 +245,127 @@ export default function ImageIdentifyPage() {
       >
         <div className="section-heading section-heading--tight">
           <div>
-            <h2 id="symptom-onset-title">증상 발현 시각</h2>
+            <h2 id="symptom-onset-title">
+              증상 발현 시간{" "}
+              <span aria-hidden="true" className="required-mark">
+                *
+              </span>
+              <span className="sr-only"> (필수)</span>
+            </h2>
           </div>
         </div>
+
         <p className="section-helper">
-          증상이 시작된 날짜와 시간을 선택해 주세요.
+          증상이 시작된 시간을 간편하게 선택해 주세요.
         </p>
-        <div className="onset-fields">
-          <label className="onset-field">
-            <span>날짜</span>
-            <input
-              aria-label="증상 시작 날짜"
-              onChange={(event) => setOnsetDate(event.target.value)}
-              required
-              type="date"
-              value={onsetDate}
-            />
-          </label>
-          <label className="onset-field">
-            <span>시간</span>
-            <input
-              aria-label="증상 시작 시간"
-              onChange={(event) => setOnsetTime(event.target.value)}
-              required
-              step="3600"
-              type="time"
-              value={onsetTime}
-            />
-          </label>
+
+        <div className="onset-control">
+          <div className="onset-mode-slot">
+            {!isManualPickerOpen ? (
+              <div className="onset-relative-mode">
+                <label className="onset-relative-input">
+                  {onsetHoursAgo > 0 && <span>약</span>}
+
+                  <input
+                    aria-label="증상 시작 몇 시간 전"
+                    aria-required="true"
+                    className={onsetHoursAgo === 0 ? "is-now" : ""}
+                    inputMode="numeric"
+                    onChange={(event) => {
+                      const value = event.target.value;
+
+                      if (value === "") {
+                        setOnsetHoursAgo(0);
+                      } else if (/^\d+$/.test(value)) {
+                        setOnsetHoursAgo(Number(value));
+                      }
+                    }}
+                    onFocus={(event) => event.target.select()}
+                    pattern="[0-9]*"
+                    required
+                    type="text"
+                    value={onsetHoursAgo === 0 ? "지금" : onsetHoursAgo}
+                  />
+
+                  {onsetHoursAgo > 0 && <span>시간 전</span>}
+                </label>
+
+                <div
+                  aria-label="빠른 시간 선택"
+                  className="onset-quick-options"
+                  role="group"
+                >
+                  {[0, 1, 3, 6, 12].map((hours) => (
+                    <button
+                      aria-pressed={onsetHoursAgo === hours}
+                      className={onsetHoursAgo === hours ? "is-selected" : ""}
+                      key={hours}
+                      onClick={() => setOnsetHoursAgo(hours)}
+                      type="button"
+                    >
+                      {hours === 0 ? "지금" : `${hours}시간 전`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="onset-fields" id="manual-onset-fields">
+                <label className="onset-field">
+                  <span>날짜</span>
+
+                  <input
+                    aria-label="증상 시작 날짜"
+                    aria-required="true"
+                    onChange={(event) => setOnsetDate(event.target.value)}
+                    required
+                    type="date"
+                    value={onsetDate}
+                  />
+                </label>
+
+                <label className="onset-field">
+                  <span>시간</span>
+
+                  <input
+                    aria-label="증상 시작 시간"
+                    aria-required="true"
+                    onChange={(event) => setOnsetTime(event.target.value)}
+                    required
+                    step="3600"
+                    type="time"
+                    value={onsetTime}
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+
+          <button
+            aria-expanded={isManualPickerOpen}
+            aria-controls="manual-onset-fields"
+            className="onset-manual-toggle"
+            onClick={() => {
+              if (!isManualPickerOpen && (!onsetDate || !onsetTime)) {
+                const currentDateTime = getCurrentDateTimeInputValues();
+
+                setOnsetDate(currentDateTime.date);
+                setOnsetTime(currentDateTime.time);
+              }
+
+              setIsManualPickerOpen(!isManualPickerOpen);
+
+              setOnsetInputMode(isManualPickerOpen ? "relative" : "manual");
+            }}
+            type="button"
+          >
+            <Icon name="clock" size={14} />
+
+            {isManualPickerOpen
+              ? "몇 시간 전으로 선택"
+              : "날짜·시간으로 직접 선택"}
+
+            <Icon name="chevronRight" size={13} />
+          </button>
         </div>
       </section>
 
@@ -216,12 +375,20 @@ export default function ImageIdentifyPage() {
       >
         <div className="section-heading section-heading--tight">
           <div>
-            <h2 id="captured-title">알약 사진</h2>
+            <h2 id="captured-title">
+              알약 사진{" "}
+              <span aria-hidden="true" className="required-mark">
+                *
+              </span>
+              <span className="sr-only"> (필수)</span>
+            </h2>
           </div>
         </div>
+
         <p className="section-helper">
           각인과 분할선이 선명한 사진일수록 식별에 도움이 됩니다.
         </p>
+
         <div className="pill-set-list">
           {pillSets.map((pillSet, index) => (
             <section
@@ -231,6 +398,7 @@ export default function ImageIdentifyPage() {
             >
               <div className="pill-set__header">
                 <h3 id={`pill-set-${pillSet.id}-title`}>알약 {index + 1}</h3>
+
                 {index > 0 && (
                   <button
                     aria-label={`알약 ${index + 1} 삭제`}
@@ -241,16 +409,20 @@ export default function ImageIdentifyPage() {
                   </button>
                 )}
               </div>
+
               <div className="upload-grid">
                 <UploadCard
                   label="앞면"
+                  required
                   side={`pill-${pillSet.id}-front`}
                   onChange={(file) =>
                     handleUploadChange(pillSet.id, "front", file)
                   }
                 />
+
                 <UploadCard
                   label="뒷면"
+                  required
                   side={`pill-${pillSet.id}-back`}
                   onChange={(file) =>
                     handleUploadChange(pillSet.id, "back", file)
@@ -260,6 +432,7 @@ export default function ImageIdentifyPage() {
             </section>
           ))}
         </div>
+
         <button
           className="pill-set-add"
           onClick={handleAddPillSet}
