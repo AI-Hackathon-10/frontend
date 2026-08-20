@@ -2635,6 +2635,69 @@ svg {
   .home-action__camera-frame, .home-action__capsule, .home-action__wave { transition: transform 220ms ease; }
 }
 
+/* Home-only full-bleed shell. Other routes keep the shared app card. */
+.site-background:has(.app-shell--home) {
+  min-height: 100svh;
+  padding: 0;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(138, 215, 214, 0.2), transparent 28%),
+    radial-gradient(circle at 92% 8%, rgba(103, 190, 229, 0.18), transparent 25%),
+    linear-gradient(145deg, #f7fcfe 0%, #edf8fc 55%, #f8fcff 100%);
+}
+
+.app-shell--home {
+  width: 100%;
+  min-height: 100svh;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.app-shell--home .desktop-header {
+  width: 100%;
+  border-bottom-color: rgba(180, 211, 226, 0.52);
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.app-shell--home .page-content {
+  width: 100%;
+}
+
+.app-shell--home .page--home {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100svh - 84px);
+  padding-top: 32px;
+  padding-bottom: 40px;
+  justify-content: center;
+}
+
+.app-shell--home .home-hero h1 {
+  font-size: clamp(78px, 8vw, 108px);
+}
+
+.app-shell--home .page-scroll {
+  background: transparent;
+}
+
+@media (max-width: 880px) {
+  .site-background:has(.app-shell--home) { padding: 0; }
+  .app-shell--home .mobile-header {
+    border-bottom-color: rgba(180, 211, 226, 0.52);
+    background: rgba(255, 255, 255, 0.42);
+  }
+  .app-shell--home .page--home {
+    min-height: calc(100svh - 62px);
+    padding-top: 32px;
+    padding-bottom: 32px;
+  }
+  .app-shell--home .home-hero h1 { font-size: clamp(68px, 15vw, 88px); }
+}
+
 /* Medication result redesign: conclusion → reason → information → warning */
 .page--results {
   width: min(100%, 860px);
