@@ -44,10 +44,12 @@ export default function ImageIdentifyPage() {
     setPillSets((current) => current.filter((pillSet) => pillSet.id !== setId))
   }
 
-  // S3 업로드 및 API 식별 호출을 처리하는 단일 세트 함수
+  // 💡 S3 Presigned URL을 발급받아 업로드 후 식별 API를 순차적으로 호출하는 정석 파이프라인
   async function uploadOnePillSet(pillSet) {
+    // 1. 공통 medicationApi를 사용하여 안전하게 S3 업로드용 URL과 requestId 발급
     const { requestId, frontUploadUrl, backUploadUrl } = await getPresignedUrl()
 
+    // 2. 발급받은 개별 S3 URL로 이미지 바이너리(File 객체) 전송
     await Promise.all([
       fetch(frontUploadUrl, {
         method: 'PUT',
@@ -61,9 +63,9 @@ export default function ImageIdentifyPage() {
       }),
     ])
 
-    // 백엔드로 전송 시 필요한 메타데이터(증상 시간, 메모)도 함께 캡슐화 가능
     const startedAt = onsetDate && onsetTime ? new Date(`${onsetDate}T${onsetTime}`).toISOString() : null
 
+    // 3. 업로드가 완료되면 최종 식별 API 호출 결과를 반환 (client.js 내부에서 ApiError 처리됨)
     return identifyMedication({ 
       requestId, 
       symptoms: selectedSymptoms,
@@ -72,7 +74,6 @@ export default function ImageIdentifyPage() {
     })
   }
 
-  // 💡 중복을 제거하고 비즈니스 로직을 하나로 합친 핸들러
   const handleFindPill = async () => {
     if (selectedSymptoms.length === 0) return
     if (!onsetDate || !onsetTime) {
@@ -90,11 +91,11 @@ export default function ImageIdentifyPage() {
     setErrorMessage(null)
 
     try {
-      // 모든 알약 세트를 병렬로 업로드 및 분석 요청
+      // 모든 알약 세트를 순차/병렬로 업로드 및 분석 요청
       const results = await Promise.all(readySets.map(uploadOnePillSet))
       const startedAt = new Date(`${onsetDate}T${onsetTime}`).toISOString()
 
-      // 결과 페이지로 안전하게 데이터 전송하며 라우팅
+      // 결과 페이지로 획득한 데이터와 함께 라우팅
       navigate('/search/results', {
         state: { 
           symptoms: selectedSymptoms, 
@@ -104,6 +105,7 @@ export default function ImageIdentifyPage() {
         },
       })
     } catch (e) {
+      // 💡 이제 정상적으로 ApiError 규격을 타기 때문에 백엔드 에러 메시지가 온전히 출력됩니다.
       const message = e instanceof ApiError ? e.message : '분석 중 오류가 발생했어요. 다시 시도해 주세요.'
       setErrorMessage(message)
     } finally {
