@@ -1,109 +1,214 @@
-import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import PageHeader from '../components/layout/PageHeader.jsx'
 import Button from '../components/ui/Button.jsx'
 import Icon from '../components/ui/Icon.jsx'
-import PillIllustration from '../components/drugs/PillIllustration.jsx'
 import DoseConfirmModal from '../components/drugs/DoseConfirmModal.jsx'
-import { DEMO_IDENTIFY_RESULT, EXPIRATION_STATUS, MOCK_MEDICATION_RECORDS, getDrugById } from '../data/mockData.js'
 import alertTriangle from '../assets/icons/triangle-alert.svg'
+import efficacyIcon from '../assets/icons/efficacy.svg'
+import dosageIcon from '../assets/icons/dosage.svg'
+import chevronDownIcon from '../assets/icons/chevron-down.svg'
+import arrowRightIcon from '../assets/icons/arrow-right.svg'
+import {
+  clearMedicationAnalysisResults,
+  loadMedicationAnalysisResults,
+  normalizeMedicationResults,
+} from '../utils/medicationAnalysisStorage.js'
 
-function IdentificationState({ status, onRetry }) {
-  if (status === 'loading') {
-    return (
-      <section className="identify-result-state" aria-live="polite">
-        <span className="identify-result-state__spinner" aria-hidden="true" />
-        <h2>알약을 판별하고 있어요</h2>
-        <p>이미지의 모양과 식별 문자를 확인하는 중입니다.</p>
-      </section>
-    )
+function toPercent(value) {
+  const score = Number(value)
+  if (!Number.isFinite(score)) return null
+  const percent = score <= 1 ? score * 100 : score
+  return Math.round(Math.min(100, Math.max(0, percent)))
+}
+
+function formatScore(value, suffix = '%') {
+  const percent = toPercent(value)
+  return percent === null ? '확인 불가' : `${percent}${suffix}`
+}
+
+function getRecommendationMeta(status) {
+  if (status === 'RECOMMENDED') {
+    return {
+      title: '현재 정보로는 복용을 고려할 수 있어요',
+      tone: 'recommended',
+    }
   }
 
-  return (
-    <section className="identify-result-state identify-result-state--error" role="alert">
-      <span className="identify-result-state__icon"><Icon name="alert" size={24} /></span>
-      <h2>알약을 판별하지 못했어요</h2>
-      <p>사진이 흐리거나 식별 문자가 가려졌을 수 있어요. 다른 사진으로 다시 시도해주세요.</p>
-      <Button icon="search" onClick={onRetry} variant="outline">다시 시도하기</Button>
-    </section>
+  if (status === 'NOT_RECOMMENDED') {
+    return {
+      title: '지금은 이 약을 권장하지 않아요',
+      tone: 'not-recommended',
+    }
+  }
+
+  return { title: '복용 전 확인이 필요해요', tone: 'unknown' }
+}
+
+function splitItemName(itemName = '') {
+  const match = itemName.match(/^(.+?)\s*\(([^()]+)\)\s*$/)
+  return match ? { name: match[1], ingredient: match[2] } : { name: itemName, ingredient: null }
+}
+
+function getInitialResults(locationState) {
+  const actualResults = normalizeMedicationResults(locationState?.results ?? locationState?.result)
+  if (actualResults.length) return actualResults
+  return loadMedicationAnalysisResults()
+}
+
+function ResultImage({ result, small = false }) {
+  const [hasError, setHasError] = useState(false)
+  const imageUrl = result.imageUrl || result.official?.imageUrl
+
+  useEffect(() => setHasError(false), [imageUrl])
+
+  return imageUrl && !hasError ? (
+    <img alt={`${result.itemName} 알약`} className={small ? 'result-candidate__image' : 'analysis-card__image'} onError={() => setHasError(true)} src={imageUrl} />
+  ) : (
+    <div className={small ? 'result-candidate__image result-image-fallback' : 'analysis-card__image result-image-fallback'} aria-hidden="true">
+      <Icon name="search" size={small ? 20 : 32} />
+    </div>
+  )
+}
+
+function WarningModal({ open, result, onClose }) {
+  useEffect(() => {
+    if (!open) return undefined
+    const onKeyDown = (event) => event.key === 'Escape' && onClose()
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [onClose, open])
+
+  if (!open) return null
+
+  const sections = [
+    ['경고', result.official?.warning],
+    ['복용 전 주의', result.official?.caution],
+    ['약물 상호작용', result.official?.interaction],
+    ['부작용', result.official?.sideEffect],
+  ].filter(([, content]) => content)
+
+  return createPortal(
+    <div className="dose-modal-backdrop warning-modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <section aria-labelledby="warning-modal-title" aria-modal="true" className="dose-modal warning-modal" role="dialog">
+        <button aria-label="주의사항 전체 보기 닫기" className="dose-modal__close icon-button" onClick={onClose} type="button"><Icon name="close" size={19} /></button>
+        <div className="warning-modal__heading"><img alt="" src={alertTriangle} /><div><span>안전 정보</span><h2 id="warning-modal-title">주의사항 전체 보기</h2></div></div>
+        <div className="warning-modal__sections">
+          {sections.length ? sections.map(([title, content]) => <section key={title}><h3>{title}</h3><p>{content}</p></section>) : <p className="warning-modal__empty">제공된 공식 주의사항이 없습니다.</p>}
+          {result.recommendation?.caution && <section><h3>AI 분석 주의사항</h3><p>{result.recommendation.caution}</p></section>}
+          {result.official?.storage && <section><h3>보관 방법</h3><p>{result.official.storage}</p></section>}
+        </div>
+        <Button onClick={onClose} variant="outline">확인</Button>
+      </section>
+    </div>,
+    document.body,
   )
 }
 
 export default function SearchResultsPage() {
   const location = useLocation()
-  const result = { ...DEMO_IDENTIFY_RESULT, ...location.state }
-  const [identificationStatus, setIdentificationStatus] = useState(result.status)
+  const navigate = useNavigate()
+  const results = useMemo(() => getInitialResults(location.state), [location.state])
+  const rankedResults = useMemo(() => results
+    .map((result, originalIndex) => ({ result, originalIndex }))
+    .sort((a, b) => (Number(b.result.recommendation?.score) || 0) - (Number(a.result.recommendation?.score) || 0)), [results])
+  const aiTopIndex = rankedResults[0]?.originalIndex ?? 0
+  const [selectedIndex, setSelectedIndex] = useState(aiTopIndex)
+  const [isWarningOpen, setWarningOpen] = useState(false)
   const [isDoseModalOpen, setDoseModalOpen] = useState(false)
-  const [records, setRecords] = useState(MOCK_MEDICATION_RECORDS[result.drugId] ?? [])
-  const drug = getDrugById(result.drugId)
-  const expiration = EXPIRATION_STATUS[drug.expirationStatus] ?? EXPIRATION_STATUS.unknown
-  const symptoms = result.symptoms?.length ? result.symptoms : DEMO_IDENTIFY_RESULT.symptoms
+  const [openDetail, setOpenDetail] = useState(null)
+  const [recordedMedication, setRecordedMedication] = useState(null)
+  const selected = results[selectedIndex]
+  const symptoms = location.state?.symptoms ?? []
 
-  const recordDose = () => {
-    setRecords((current) => [
-      { id: `mock-dose-${Date.now()}`, takenAt: new Date().toISOString(), note: '목업 복용 기록' },
-      ...current,
-    ])
+  useEffect(() => setSelectedIndex(aiTopIndex), [aiTopIndex])
+
+  const handleSearchAgain = () => {
+    clearMedicationAnalysisResults()
+    navigate('/identify/image')
   }
 
-  const handleTakeMedication = () => {
-    if (drug.expirationStatus === 'unknown') {
+  const handleConfirmDose = () => {
+    setDoseModalOpen(false)
+    setRecordedMedication(selected.itemName)
+  }
+
+  if (!selected) {
+    return <div className="page page--results page--narrow"><PageHeader eyebrow="알약 식별" title="판별 결과" backTo="/identify/image" /><section className="identify-result-state identify-result-state--error" role="alert"><span className="identify-result-state__icon"><Icon name="alert" size={24} /></span><h2>분석 결과를 불러올 수 없어요</h2><p>저장된 분석 결과가 없습니다. 알약을 다시 분석해 주세요.</p><button className="button button--outline" onClick={handleSearchAgain} type="button">다시 찾기</button></section></div>
+  }
+
+  const warningPreview = selected.recommendation?.caution || selected.official?.warning || selected.official?.caution
+  const recommendationMeta = getRecommendationMeta(selected.recommendation?.status)
+  const itemName = splitItemName(selected.itemName)
+  const identificationPercent = toPercent(selected.identification?.score)
+  const recommendationPercent = toPercent(selected.recommendation?.score)
+  const isCautious = selected.recommendation?.status === 'NOT_RECOMMENDED' || (recommendationPercent !== null && recommendationPercent < 50)
+
+  const handleDoseAction = () => {
+    if (isCautious) {
       setDoseModalOpen(true)
       return
     }
-    if (drug.expirationStatus === 'expired') return
-    recordDose()
-  }
-
-  const handleConfirmRecord = () => {
-    setDoseModalOpen(false)
-    recordDose()
-  }
-
-  if (identificationStatus !== 'success') {
-    return (
-      <div className="page page--results page--narrow">
-        <PageHeader eyebrow="알약 식별" title="판별 결과" description="사진을 바탕으로 알약 정보를 확인합니다." backTo="/identify/image" />
-        <IdentificationState status={identificationStatus} onRetry={() => setIdentificationStatus('loading')} />
-        <p className="page-footnote"><Icon name="shield" size={15} /> 판별 결과는 참고 정보이며 실제 제품과 다를 수 있습니다.</p>
-      </div>
-    )
+    handleConfirmDose()
   }
 
   return (
     <div className="page page--results page--narrow">
-      <PageHeader eyebrow="알약 식별" title="판별 결과" description="사진을 바탕으로 확인한 참고 정보예요." backTo={null} />
+      <PageHeader eyebrow="알약 식별" title="이 약, 먹어도 될까요?" description="촬영한 약과 현재 증상을 함께 확인한 결과예요." backTo={null} />
+      <article className={`analysis-card analysis-card--${recommendationMeta.tone}`} aria-labelledby="identified-drug-title" key={selectedIndex}>
+        {(symptoms.length > 0 || selectedIndex === aiTopIndex) && <div className="analysis-card__context-row">
+          {symptoms.length > 0 && <div className="results-symptom-list result-symptoms" aria-label="선택한 증상">{symptoms.map((symptom) => <span className="result-symptom-chip" key={symptom}>{symptom}</span>)}</div>}
+          {selectedIndex === aiTopIndex && <span className="analysis-card__top-badge"><Icon name="check" size={13} /> AI 추천 1순위</span>}
+        </div>}
+        <header className="analysis-card__hero">
+          <div className="analysis-card__visual"><ResultImage result={selected} /></div>
+          <div className="analysis-card__identity">
+            <h2 id="identified-drug-title">{itemName.name}</h2>
+            {itemName.ingredient && <p className="analysis-card__ingredient">{itemName.ingredient}</p>}
+            <div className="result-metrics" aria-label="핵심 분석 수치">
+              <section className="result-metric">
+                <div><span>판별 일치도</span><strong>{formatScore(selected.identification?.score)}</strong></div>
+                <span className="result-metric__track" aria-hidden="true"><span style={{ width: `${identificationPercent ?? 0}%` }} /></span>
+              </section>
+              <section className="result-metric result-metric--recommendation">
+                <div><span>AI 추천 정도</span><strong>{formatScore(selected.recommendation?.score)}</strong></div>
+                <span className="result-metric__track" aria-hidden="true"><span style={{ width: `${recommendationPercent ?? 0}%` }} /></span>
+              </section>
+            </div>
+            <section className="analysis-summary" aria-labelledby="recommendation-reason-title">
+              <h3 id="recommendation-reason-title">{recommendationMeta.title}</h3>
+              <p>{selected.recommendation?.reason || '제공된 판단 이유가 없습니다.'}</p>
+            </section>
+          </div>
+        </header>
 
-      <article className="compact-result" aria-labelledby="identified-drug-title">
-        <div className="compact-result__topline">
-          <div className="results-symptom-list" aria-label="선택한 증상">{symptoms.map((symptom) => <span className="result-symptom-chip" key={symptom}>{symptom}</span>)}</div>
-          <div className={`compact-result__expiration compact-result__expiration--${expiration.tone}`}><img alt="" src={alertTriangle} /><span>{expiration.label}</span></div>
-        </div>
-        <div className="compact-result__visual"><PillIllustration imprint={drug.imprintFront} size="large" variant={drug.imageVariant} /></div>
-        <div className="compact-result__summary">
-          <div className="compact-result__name"><span className="eyebrow">AI 식별 결과</span><h2 id="identified-drug-title">{drug.name}</h2></div>
-          <div className="compact-result__similarity"><div><span>이미지 유사도</span><strong>{drug.similarity}%</strong></div><span className="compact-result__similarity-track" aria-hidden="true"><span style={{ width: `${drug.similarity}%` }} /></span></div>
-          <dl className="compact-result__info"><div><dt>효능</dt><dd>{drug.effect}</dd></div><div><dt>복용방법</dt><dd>{drug.usage}</dd></div></dl>
-          <div className="compact-result__caution"><img alt="" src={alertTriangle} /><div><strong>주의사항</strong><p>{drug.cautions.join(' ')}</p></div></div>
-        </div>
+        <section className="result-details" aria-label="약 상세 정보">
+          <div className="result-details__items">
+            <details open={openDetail === 'efficacy'}><summary onClick={(event) => { event.preventDefault(); setOpenDetail((current) => current === 'efficacy' ? null : 'efficacy') }}><span><img alt="" className="result-detail-icon" src={efficacyIcon} /> 주요 효능</span><img alt="" className="result-chevron-icon" src={chevronDownIcon} /></summary><p>{selected.official?.efficacy || '공식 정보가 없습니다.'}</p></details>
+            <details open={openDetail === 'dosage'}><summary onClick={(event) => { event.preventDefault(); setOpenDetail((current) => current === 'dosage' ? null : 'dosage') }}><span><img alt="" className="result-detail-icon" src={dosageIcon} /> 복용 방법</span><img alt="" className="result-chevron-icon" src={chevronDownIcon} /></summary><p>{selected.official?.useMethod || '공식 정보가 없습니다.'}</p></details>
+          </div>
+        </section>
+
+        <section className="analysis-card__warning">
+          <img alt="" src={alertTriangle} />
+          <div><span>안전 정보</span><h3>복용 전 꼭 확인하세요</h3><p>{warningPreview || '제공된 주의사항이 없습니다.'}</p><button onClick={() => setWarningOpen(true)} type="button">주의사항 전체 보기 <img alt="" className="result-link-icon" src={arrowRightIcon} /></button></div>
+        </section>
       </article>
 
-      <section className="medication-history" aria-labelledby="medication-history-title">
-        <div className="compact-section-heading"><h2 id="medication-history-title">최근 복용 기록</h2><span>{records.length}건</span></div>
-        {records.length === 0 ? (
-          <div className="medication-history__empty"><Icon name="notes" size={21} /><div><strong>최근 복용 기록이 없어요</strong><p>복용을 기록하면 이곳에서 최근 이력을 확인할 수 있어요.</p></div></div>
-        ) : (
-          <ul className="medication-history__list">{records.map((record) => <li key={record.id}><span><Icon name="check" size={15} /></span><div><strong>{new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(record.takenAt))}</strong><p>{record.note}</p></div></li>)}</ul>
-        )}
-      </section>
+      {results.length > 1 && <section className="result-candidates" aria-labelledby="candidate-title"><div className="result-candidates__heading"><div><h2 id="candidate-title">다른 분석 후보</h2><p>판별 일치도와 AI 추천 정도를 비교해 보세요.</p></div><span>{results.length}개 결과</span></div><div className="result-candidates__scroller">{rankedResults.map(({ result, originalIndex }) => <button aria-label={`${result.itemName} 결과 보기`} aria-pressed={selectedIndex === originalIndex} className="result-candidate" key={`${result.itemSeq || result.itemName}-${originalIndex}`} onClick={() => { setSelectedIndex(originalIndex); setWarningOpen(false); setRecordedMedication(null); setOpenDetail(null) }} type="button"><div className="result-candidate__visual"><ResultImage result={result} small />{originalIndex === aiTopIndex && <span className="result-candidate__top">AI 1순위</span>}{selectedIndex === originalIndex && <span className="result-candidate__selected"><Icon name="check" size={12} /></span>}</div><div className="result-candidate__copy"><strong>{result.itemName}</strong><span className="result-candidate__metric">일치도 <b>{formatScore(result.identification?.score)}</b></span><span className="result-candidate__metric">AI 추천 <b>{formatScore(result.recommendation?.score)}</b></span></div></button>)}</div></section>}
 
-      <div className="results-actions">
-        <Link className="button button--outline button--grow" to="/identify/image"><Icon name="arrowLeft" size={17} /><span>다시 찾기</span></Link>
-        <Button className="button--grow" disabled={drug.expirationStatus === 'expired'} icon="check" onClick={handleTakeMedication}>복용하기</Button>
-      </div>
-      {drug.expirationStatus === 'expired' && <p className="dose-blocked" role="status"><Icon name="alert" size={16} /> 유효기간이 지난 의약품은 복용 기록을 진행할 수 없어요.</p>}
-      <p className="page-footnote"><Icon name="shield" size={15} /> 식별 및 의약품 정보는 참고용입니다. 복용 판단은 의사·약사와 확인하세요.</p>
-      <DoseConfirmModal drug={drug} onCancel={() => setDoseModalOpen(false)} onConfirm={handleConfirmRecord} open={isDoseModalOpen} />
+      {recordedMedication && <p className="dose-recorded" role="status"><Icon name="check" size={16} /> {recordedMedication} 복용을 기록했어요.</p>}
+      <div className={`results-actions ${isCautious ? 'results-actions--cautious' : ''}`}><Button className="button--grow" icon="arrowLeft" onClick={handleSearchAgain} variant="outline">다시 찾기</Button><Button className="button--grow results-dose-action" icon="check" onClick={handleDoseAction} variant="primary">복용하기</Button></div>
+      {isCautious && <p className="results-action-hint"><Icon name="alert" size={14} /> AI 분석상 복용을 권장하지 않아 확인 후 기록할 수 있어요.</p>}
+      <p className="page-footnote"><Icon name="shield" size={15} /> AI 분석 결과는 참고용입니다. 복용 전 의사·약사와 확인하세요.</p>
+      <WarningModal onClose={() => setWarningOpen(false)} open={isWarningOpen} result={selected} />
+      <DoseConfirmModal analysisWarning={isCautious} onCancel={() => setDoseModalOpen(false)} onConfirm={handleConfirmDose} open={isDoseModalOpen} />
     </div>
   )
 }

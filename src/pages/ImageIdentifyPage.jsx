@@ -16,6 +16,7 @@ import {
   uploadMedicationImage,
 } from "../api/medicationApi.js";
 import { ApiError } from "../api/client.js";
+import { saveMedicationAnalysisResults } from "../utils/medicationAnalysisStorage.js";
 
 export default function ImageIdentifyPage() {
   const navigate = useNavigate();
@@ -109,12 +110,21 @@ export default function ImageIdentifyPage() {
       // 모든 알약 세트를 순차/병렬로 업로드 및 분석 요청
       const results = await Promise.all(readySets.map(uploadOnePillSet));
       const startedAt = new Date(`${onsetDate}T${onsetTime}`).toISOString();
+      const analysisResults = saveMedicationAnalysisResults(results);
+
+      if (analysisResults.length === 0) {
+        throw new ApiError(
+          "분석 결과를 찾을 수 없습니다. 사진을 다시 확인해 주세요.",
+          0,
+          "EMPTY_ANALYSIS_RESULT",
+        );
+      }
 
       // 결과 페이지로 획득한 데이터와 함께 라우팅
       navigate("/search/results", {
         state: {
           symptoms: selectedSymptoms,
-          results,
+          results: analysisResults,
           memo,
           startedAt,
         },
