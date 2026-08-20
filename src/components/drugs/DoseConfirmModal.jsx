@@ -1,23 +1,29 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Button from '../ui/Button.jsx'
 import Icon from '../ui/Icon.jsx'
 import alertTriangle from '../../assets/icons/triangle-alert.svg'
 
-export default function DoseConfirmModal({ open, drug, onCancel, onConfirm }) {
+export default function DoseConfirmModal({ open, analysisWarning = false, onCancel, onConfirm }) {
   useEffect(() => {
     if (!open) return undefined
 
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') onCancel()
     }
 
     document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+    }
   }, [onCancel, open])
 
   if (!open) return null
 
-  return (
+  return createPortal(
     <div
       aria-hidden="false"
       className="dose-modal-backdrop"
@@ -30,13 +36,14 @@ export default function DoseConfirmModal({ open, drug, onCancel, onConfirm }) {
           <Icon name="close" size={19} />
         </button>
         <div className="dose-modal__icon"><img alt="" src={alertTriangle} /></div>
-        <h2 id="dose-confirm-title">유효기간을 확인할 수 없어요</h2>
-        <p className="dose-modal__lead">유효기간을 확인할 수 없는 의약품은 복용을 권장하기 어렵습니다. 복용 전 의사 또는 약사에게 확인해주세요.</p>
+        <h2 id="dose-confirm-title">{analysisWarning ? 'AI 분석상 복용을 권장하지 않아요' : '복용을 기록할까요?'}</h2>
+        <p className="dose-modal__lead">{analysisWarning ? '현재 증상과 사용자 정보를 기준으로 권장하지 않는 약입니다. 복용 전 의사 또는 약사에게 확인해주세요.' : '현재 선택한 약의 복용 기록을 남깁니다.'}</p>
         <div className="dose-modal__actions">
           <Button className="button--grow" onClick={onCancel} variant="outline">취소</Button>
-          <Button className="button--grow" onClick={onConfirm} variant="primary">그래도 기록하기</Button>
+          <Button className="button--grow" onClick={onConfirm} variant="primary">{analysisWarning ? '복용 기록하기' : '기록하기'}</Button>
         </div>
       </section>
-    </div>
+    </div>,
+    document.body,
   )
 }
