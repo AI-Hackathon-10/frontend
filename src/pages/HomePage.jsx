@@ -4,6 +4,7 @@ import Icon from '../components/ui/Icon.jsx'
 const actions = [
   { title: '사진으로 알약 찾기', description: '알약 사진을 업로드해 빠르게 식별해요', to: '/identify/image', icon: 'camera', theme: 'blue' },
   { title: '보이스로 알약 찾기', description: '음성으로 증상이나 약 정보를 말해 탐색해요', to: '/identify/voice', icon: 'mic', theme: 'navy' },
+  { title: '어르신 약 추천', description: '큰 글씨와 쉬운 질문으로 어르신도 편하게', to: '/elderly/voice', icon: 'mic', theme: 'warm' },
 ]
 
 export default function HomePage() {
