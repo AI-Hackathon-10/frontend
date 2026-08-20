@@ -20,6 +20,7 @@ const iconPaths = {
   close: <path d="m6 6 8 8M14 6l-8 8" />,
   compass: <><circle cx="10" cy="10" r="7.5" /><path d="m13 7-1.4 4.6L7 13l1.4-4.6L13 7Z" /></>,
   folder: <><path d="M2.8 6.2a1.7 1.7 0 0 1 1.7-1.7h3l1.7 1.8h6.3a1.7 1.7 0 0 1 1.7 1.7v6.9a1.7 1.7 0 0 1-1.7 1.7H4.5a1.7 1.7 0 0 1-1.7-1.7V6.2Z" /><path d="M3.1 8.2h13.5" /></>,
+  download: <><path d="M10 3v9.2M6.5 8.7 10 12.2l3.5-3.5M4 13.5v1.8A1.7 1.7 0 0 0 5.7 17h8.6a1.7 1.7 0 0 0 1.7-1.7v-1.8" /></>,
   grid: <><rect x="3" y="3" width="5" height="5" rx="1" /><rect x="12" y="3" width="5" height="5" rx="1" /><rect x="3" y="12" width="5" height="5" rx="1" /><rect x="12" y="12" width="5" height="5" rx="1" /></>,
   home: <><path d="m3 9.2 7-6.1 7 6.1v7.1a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 16.3V9.2Z" /><path d="M7.5 17.8v-5.5h5v5.5" /></>,
   image: <><rect x="2.5" y="3" width="15" height="14" rx="2" /><circle cx="7" cy="7.3" r="1.2" /><path d="m4.5 14 3.3-3.2 2.4 2.2 2-1.8 3.3 2.8" /></>,

@@ -12,6 +12,9 @@ import { ApiError } from '../api/client.js'
 export default function ImageIdentifyPage() {
   const navigate = useNavigate()
   const [selectedSymptoms, setSelectedSymptoms] = useState([])
+  const [onsetDate, setOnsetDate] = useState('')
+  const [onsetTime, setOnsetTime] = useState('')
+  const [memo, setMemo] = useState('')
   const nextPillSetId = useRef(2)
   const [pillSets, setPillSets] = useState([{ id: 1, front: null, back: null }])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -40,6 +43,7 @@ export default function ImageIdentifyPage() {
   const handleRemovePillSet = (setId) => {
     setPillSets((current) => current.filter((pillSet) => pillSet.id !== setId))
   }
+
 
   async function uploadOnePillSet(pillSet) {
     const { requestId, frontUploadUrl, backUploadUrl } = await getPresignedUrl()
@@ -84,6 +88,20 @@ export default function ImageIdentifyPage() {
     } finally {
       setIsSubmitting(false)
     }
+
+  const handleFindPill = () => {
+    if (selectedSymptoms.length === 0 || !onsetDate || !onsetTime) return
+
+    const startedAt = new Date(`${onsetDate}T${onsetTime}`).toISOString()
+
+    navigate('/search/results', {
+      state: {
+        memo,
+        startedAt,
+        symptoms: selectedSymptoms,
+        drugId: 'prime-tablet',
+      },
+    })
   }
 
   return (
@@ -96,6 +114,56 @@ export default function ImageIdentifyPage() {
         selected={selectedSymptoms}
         onToggle={handleToggleSymptom}
       />
+
+      <section aria-labelledby="symptom-onset-title" className="identify-context-section">
+        <div className="section-heading section-heading--tight">
+          <div>
+            <h2 id="symptom-onset-title">증상 발현 시각</h2>
+          </div>
+        </div>
+        <p className="section-helper">증상이 시작된 날짜와 시간을 선택해 주세요.</p>
+        <div className="onset-fields">
+          <label className="onset-field">
+            <span>날짜</span>
+            <input
+              aria-label="증상 시작 날짜"
+              onChange={(event) => setOnsetDate(event.target.value)}
+              required
+              type="date"
+              value={onsetDate}
+            />
+          </label>
+          <label className="onset-field">
+            <span>시간</span>
+            <input
+              aria-label="증상 시작 시간"
+              onChange={(event) => setOnsetTime(event.target.value)}
+              required
+              step="3600"
+              type="time"
+              value={onsetTime}
+            />
+          </label>
+        </div>
+      </section>
+
+      <section aria-labelledby="symptom-memo-title" className="identify-context-section identify-context-section--memo">
+        <div className="section-heading section-heading--tight">
+          <div>
+            <h2 id="symptom-memo-title">증상 메모</h2>
+          </div>
+          <span className="character-count">{memo.length} / 200</span>
+        </div>
+        <p className="section-helper">증상에 대해 더 알려주고 싶은 내용을 입력해 주세요. (선택)</p>
+        <textarea
+          aria-label="증상 메모"
+          className="symptom-memo"
+          maxLength={200}
+          onChange={(event) => setMemo(event.target.value)}
+          placeholder="증상과 함께 알려주고 싶은 내용을 입력해 주세요."
+          value={memo}
+        />
+      </section>
 
       <section aria-labelledby="captured-title" className="capture-section identify-upload-section">
         <div className="section-heading section-heading--tight">
@@ -132,6 +200,7 @@ export default function ImageIdentifyPage() {
       <div className="identify-action-bar">
         <Button disabled={selectedSymptoms.length === 0 || isSubmitting} icon="search" onClick={handleFindPill} variant="primary">
           {isSubmitting ? '분석 중...' : '알약 찾기'}
+
         </Button>
       </div>
 
@@ -140,4 +209,4 @@ export default function ImageIdentifyPage() {
       </div>
     </div>
   )
-}
+  }}
