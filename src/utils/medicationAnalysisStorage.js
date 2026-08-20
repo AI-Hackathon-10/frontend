@@ -3,7 +3,8 @@ export const MEDICATION_ANALYSIS_STORAGE_KEY = 'medicationAnalysisResult'
 export function normalizeMedicationResults(value) {
   if (Array.isArray(value)) return value.flatMap(normalizeMedicationResults)
   if (Array.isArray(value?.result)) return normalizeMedicationResults(value.result)
-  return value?.itemName ? [value] : []
+  if (value && typeof value === 'object' && !Array.isArray(value)) return [value]
+  return []
 }
 
 export function saveMedicationAnalysisResults(value) {
