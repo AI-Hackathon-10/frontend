@@ -39,7 +39,7 @@ export default function ImageIdentifyPage() {
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [onsetInputMode, setOnsetInputMode] = useState("relative");
   const [isManualPickerOpen, setIsManualPickerOpen] = useState(false);
-  const [onsetHoursAgo, setOnsetHoursAgo] = useState(3);
+  const [onsetHoursAgo, setOnsetHoursAgo] = useState(0);
   const [onsetDate, setOnsetDate] = useState("");
   const [onsetTime, setOnsetTime] = useState("");
   const [memo, setMemo] = useState("");
@@ -150,11 +150,8 @@ export default function ImageIdentifyPage() {
       return;
     }
 
-    if (
-      onsetInputMode === "relative" &&
-      (!onsetHoursAgo || onsetHoursAgo < 1)
-    ) {
-      setErrorMessage("증상 발현 시간을 1시간 이상 입력해 주세요.");
+    if (onsetInputMode === "relative" && onsetHoursAgo < 0) {
+      setErrorMessage("증상 발현 시간은 0시간 이상 입력해 주세요.");
       return;
     }
 
@@ -267,21 +264,30 @@ export default function ImageIdentifyPage() {
             {!isManualPickerOpen ? (
               <div className="onset-relative-mode">
                 <label className="onset-relative-input">
-                  <span>약</span>
+                  {onsetHoursAgo > 0 && <span>약</span>}
 
                   <input
                     aria-label="증상 시작 몇 시간 전"
                     aria-required="true"
-                    min="1"
-                    onChange={(event) =>
-                      setOnsetHoursAgo(Number(event.target.value))
-                    }
+                    className={onsetHoursAgo === 0 ? "is-now" : ""}
+                    inputMode="numeric"
+                    onChange={(event) => {
+                      const value = event.target.value;
+
+                      if (value === "") {
+                        setOnsetHoursAgo(0);
+                      } else if (/^\d+$/.test(value)) {
+                        setOnsetHoursAgo(Number(value));
+                      }
+                    }}
+                    onFocus={(event) => event.target.select()}
+                    pattern="[0-9]*"
                     required
-                    type="number"
-                    value={onsetHoursAgo}
+                    type="text"
+                    value={onsetHoursAgo === 0 ? "지금" : onsetHoursAgo}
                   />
 
-                  <span>시간 전</span>
+                  {onsetHoursAgo > 0 && <span>시간 전</span>}
                 </label>
 
                 <div
@@ -289,7 +295,7 @@ export default function ImageIdentifyPage() {
                   className="onset-quick-options"
                   role="group"
                 >
-                  {[1, 3, 6, 12].map((hours) => (
+                  {[0, 1, 3, 6, 12].map((hours) => (
                     <button
                       aria-pressed={onsetHoursAgo === hours}
                       className={onsetHoursAgo === hours ? "is-selected" : ""}
@@ -297,7 +303,7 @@ export default function ImageIdentifyPage() {
                       onClick={() => setOnsetHoursAgo(hours)}
                       type="button"
                     >
-                      {hours}시간 전
+                      {hours === 0 ? "지금" : `${hours}시간 전`}
                     </button>
                   ))}
                 </div>

@@ -1853,7 +1853,7 @@ svg {
 
 .onset-quick-options {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   width: 100%;
   overflow: hidden;
   background: white;
@@ -1931,6 +1931,10 @@ svg {
   font-size: 20px;
   font-weight: 800;
   outline: 0;
+}
+
+.onset-relative-input input.is-now {
+  width: 74px;
 }
 
 .onset-relative-input:focus-within {

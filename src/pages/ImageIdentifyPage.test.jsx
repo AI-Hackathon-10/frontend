@@ -4,15 +4,15 @@ import { describe, expect, it } from 'vitest'
 import ImageIdentifyPage, { getRelativeStartedAt } from './ImageIdentifyPage.jsx'
 
 describe('ImageIdentifyPage onset input', () => {
-  it('defaults to three hours ago and only shows pickers in manual mode', () => {
+  it('defaults to now and only shows pickers in manual mode', () => {
     render(
       <MemoryRouter>
         <ImageIdentifyPage />
       </MemoryRouter>,
     )
 
-    expect(screen.getByRole('button', { name: '3시간 전' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByLabelText('증상 시작 몇 시간 전')).toHaveValue(3)
+    expect(screen.getByRole('button', { name: '지금' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText('증상 시작 몇 시간 전')).toHaveValue('지금')
     expect(screen.queryByLabelText('증상 시작 날짜')).not.toBeInTheDocument()
 
     expect(screen.queryByRole('button', { name: '몇 시간 전' })).not.toBeInTheDocument()
@@ -30,7 +30,7 @@ describe('ImageIdentifyPage onset input', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '몇 시간 전으로 선택' }))
     fireEvent.click(screen.getByRole('button', { name: '6시간 전' }))
-    expect(screen.getByLabelText('증상 시작 몇 시간 전')).toHaveValue(6)
+    expect(screen.getByLabelText('증상 시작 몇 시간 전')).toHaveValue('6')
     expect(screen.queryByLabelText('증상 시작 날짜')).not.toBeInTheDocument()
   })
 
