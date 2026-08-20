@@ -1,4 +1,12 @@
+import { clearMedicationAnalysisResults } from '../utils/medicationAnalysisStorage.js'
+import { clearReportCreationContext } from '../utils/reportCreationStorage.js'
+
 const STORAGE_KEY = 'pillcare.session'
+
+function clearTransientAnalysisData() {
+  clearMedicationAnalysisResults()
+  clearReportCreationContext()
+}
 
 function decodeAccessToken(accessToken) {
   const payload = accessToken?.split('.')[1]
@@ -19,11 +27,16 @@ function decodeAccessToken(accessToken) {
 }
 
 export function saveSession({ accessToken, refreshToken, loginId }) {
+  const previousSession = loadSession()
+  if (!previousSession || previousSession.loginId !== loginId) {
+    clearTransientAnalysisData()
+  }
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ accessToken, refreshToken, loginId }))
 }
 
 export function clearSession() {
   localStorage.removeItem(STORAGE_KEY)
+  clearTransientAnalysisData()
 }
 
 export function loadSession() {

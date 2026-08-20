@@ -7,6 +7,8 @@ import alertTriangle from "../../assets/icons/triangle-alert.svg";
 export default function DoseConfirmModal({
   open,
   analysisWarning = false,
+  errorMessage = "",
+  isSubmitting = false,
   onCancel,
   onConfirm,
 }) {
@@ -16,7 +18,7 @@ export default function DoseConfirmModal({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const handleKeyDown = (event) => {
-      if (event.key === "Escape") onCancel();
+      if (event.key === "Escape" && !isSubmitting) onCancel();
     };
 
     document.addEventListener("keydown", handleKeyDown);
@@ -24,7 +26,7 @@ export default function DoseConfirmModal({
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onCancel, open]);
+  }, [isSubmitting, onCancel, open]);
 
   if (!open) return null;
 
@@ -33,18 +35,20 @@ export default function DoseConfirmModal({
       aria-hidden="false"
       className="dose-modal-backdrop"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onCancel();
+        if (event.target === event.currentTarget && !isSubmitting) onCancel();
       }}
     >
       <section
         aria-labelledby="dose-confirm-title"
         aria-modal="true"
+        aria-busy={isSubmitting}
         className="dose-modal"
         role="dialog"
       >
         <button
           aria-label="복용 확인 모달 닫기"
           className="dose-modal__close icon-button"
+          disabled={isSubmitting}
           onClick={onCancel}
           type="button"
         >
@@ -63,16 +67,20 @@ export default function DoseConfirmModal({
             ? "현재 증상과 사용자 정보를 기준으로 권장하지 않는 약입니다. 복용 전 의사 또는 약사에게 확인해주세요."
             : "현재 선택한 약의 복용 기록을 남깁니다."}
         </p>
+        {errorMessage ? (
+          <p className="dose-modal__error" role="alert">{errorMessage}</p>
+        ) : null}
         <div className="dose-modal__actions">
-          <Button className="button--grow" onClick={onCancel} variant="outline">
+          <Button className="button--grow" disabled={isSubmitting} onClick={onCancel} variant="outline">
             취소
           </Button>
           <Button
             className="button--grow"
+            disabled={isSubmitting}
             onClick={onConfirm}
             variant="primary"
           >
-            {analysisWarning ? "복용 기록하기" : "기록하기"}
+            {isSubmitting ? "기록 중..." : analysisWarning ? "복용 기록하기" : "기록하기"}
           </Button>
         </div>
       </section>

@@ -6,11 +6,20 @@ import Button from "../components/ui/Button.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import DoseConfirmModal from "../components/drugs/DoseConfirmModal.jsx";
 import alertTriangle from "../assets/icons/triangle-alert.svg";
+import { ApiError } from "../api/client.js";
+import { markMedicationTaken } from "../api/medicationApi.js";
+import { createReport, getReports } from "../api/reportApi.js";
+import { createSymptomRecord } from "../api/symptomApi.js";
 import {
   clearMedicationAnalysisResults,
-  loadMedicationAnalysisResults,
+  loadMedicationAnalysisSnapshot,
   normalizeMedicationResults,
 } from "../utils/medicationAnalysisStorage.js";
+import {
+  clearReportCreationContext,
+  loadReportCreationContext,
+  saveReportCreationProgress,
+} from "../utils/reportCreationStorage.js";
 
 function toPercent(value) {
   const score = Number(value);
@@ -72,16 +81,19 @@ function splitItemName(itemName = "") {
       };
 }
 
-function getInitialResults(locationState) {
+function getInitialAnalysis(locationState) {
   const actualResults = normalizeMedicationResults(
     locationState?.results ?? locationState?.result,
   );
 
   if (actualResults.length) {
-    return actualResults;
+    return {
+      analysisRunId: locationState?.analysisRunId ?? null,
+      results: actualResults,
+    };
   }
 
-  return loadMedicationAnalysisResults();
+  return loadMedicationAnalysisSnapshot();
 }
 
 function ResultImage({ result, small = false }) {
@@ -225,10 +237,11 @@ export default function SearchResultsPage() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const results = useMemo(
-    () => getInitialResults(location.state),
+  const initialAnalysis = useMemo(
+    () => getInitialAnalysis(location.state),
     [location.state],
   );
+  const { analysisRunId, results } = initialAnalysis;
 
   const rankedResults = useMemo(
     () =>
@@ -258,7 +271,9 @@ export default function SearchResultsPage() {
     dosage: false,
   });
 
-  const [recordedMedication, setRecordedMedication] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+
+  const [doseError, setDoseError] = useState("");
 
   const selected = results[selectedIndex];
 
@@ -270,20 +285,106 @@ export default function SearchResultsPage() {
 
   const handleSearchAgain = () => {
     clearMedicationAnalysisResults();
+    clearReportCreationContext();
     navigate("/identify/image");
   };
 
-  const handleConfirmDose = () => {
-    setDoseModalOpen(false);
-    setRecordedMedication(selected.itemName);
+  const handleConfirmDose = async () => {
+    if (isRecording) return;
+
+    setDoseError("");
+
+    const context = loadReportCreationContext();
+    const medicationId = context?.medicationIdsByResultIndex?.[selectedIndex];
+
+    const contextMatchesResults = context
+      && context.analysisRunId === analysisRunId
+      && context.medicationIdsByResultIndex.length === results.length
+      && selectedIndex >= 0
+      && selectedIndex < results.length;
+
+    if (!contextMatchesResults || !Number.isSafeInteger(medicationId) || medicationId <= 0) {
+      setDoseError(
+        "복용 기록 정보를 찾을 수 없습니다. 알약을 다시 분석해 주세요.",
+      );
+      return;
+    }
+
+    setIsRecording(true);
+
+    try {
+      const savedProgress = context.progressByResultIndex?.[selectedIndex];
+      let symptomRecordId = savedProgress?.symptomRecordId;
+      let intakeRecorded = savedProgress?.intakeRecorded ?? false;
+
+      if (!symptomRecordId) {
+        const symptomRecord = await createSymptomRecord({
+          symptomTypes: context.symptomTypes,
+          startedAt: context.startedAt,
+          memo: context.memo,
+        });
+        symptomRecordId = symptomRecord?.symptomRecordId;
+
+        if (!Number.isSafeInteger(symptomRecordId) || symptomRecordId <= 0) {
+          throw new ApiError(
+            "생성된 증상 기록 정보를 확인할 수 없습니다.",
+            0,
+            "INVALID_SYMPTOM_RECORD",
+          );
+        }
+
+        saveReportCreationProgress({
+          analysisRunId,
+          resultIndex: selectedIndex,
+          medicationId,
+          symptomRecordId,
+          intakeRecorded: false,
+        });
+      }
+
+      if (!intakeRecorded) {
+        await markMedicationTaken(medicationId);
+        intakeRecorded = true;
+        saveReportCreationProgress({
+          analysisRunId,
+          resultIndex: selectedIndex,
+          medicationId,
+          symptomRecordId,
+          intakeRecorded,
+        });
+      }
+
+      try {
+        await createReport({ symptomRecordId, medicationId });
+      } catch (reportError) {
+        let existingReports = [];
+        try {
+          existingReports = (await getReports()) ?? [];
+        } catch {
+          // Preserve and surface the original report creation error.
+        }
+
+        const reportAlreadyExists = existingReports.some(
+          (report) => report.symptomRecordId === symptomRecordId
+            && report.medication?.medicationId === medicationId,
+        );
+        if (!reportAlreadyExists) throw reportError;
+      }
+
+      clearMedicationAnalysisResults();
+      clearReportCreationContext();
+      setDoseModalOpen(false);
+      navigate("/symptoms");
+    } catch (error) {
+      setDoseError(
+        error instanceof ApiError
+          ? error.message
+          : "복용 기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      );
+    } finally {
+      setIsRecording(false);
+    }
   };
-
-  useEffect(() => {
-    if (!recordedMedication) return undefined;
-
-    const redirectTimer = window.setTimeout(() => navigate("/symptoms"), 3000);
-    return () => window.clearTimeout(redirectTimer);
-  }, [navigate, recordedMedication]);
 
   if (!selected) {
     return (
@@ -341,6 +442,10 @@ export default function SearchResultsPage() {
     (recommendationPercent !== null && recommendationPercent < 50);
 
   const handleDoseAction = () => {
+    if (isRecording) return;
+
+    setDoseError("");
+
     if (isCautious) {
       setDoseModalOpen(true);
       return;
@@ -617,6 +722,7 @@ export default function SearchResultsPage() {
                   className={`result-candidate${
                     failed ? " result-candidate--failed" : ""
                   }`}
+                  disabled={isRecording}
                   key={`${
                     result.itemSeq || result.itemName || result.pillLabel
                   }-${originalIndex}`}
@@ -624,7 +730,7 @@ export default function SearchResultsPage() {
                     setSelectedIndex(originalIndex);
 
                     setWarningOpen(false);
-                    setRecordedMedication(null);
+                    setDoseError("");
 
                     setOpenDetails({
                       efficacy: false,
@@ -688,13 +794,6 @@ export default function SearchResultsPage() {
         </section>
       )}
 
-      {recordedMedication && (
-        <p className="dose-recorded" role="status">
-          <Icon name="check" size={16} />
-          {recordedMedication} 복용을 기록했어요.
-        </p>
-      )}
-
       <div
         className={`results-actions ${
           isCautious ? "results-actions--cautious" : ""
@@ -702,6 +801,7 @@ export default function SearchResultsPage() {
       >
         <Button
           className="button--grow"
+          disabled={isRecording}
           icon="arrowLeft"
           onClick={handleSearchAgain}
           variant="outline"
@@ -712,14 +812,21 @@ export default function SearchResultsPage() {
         {!selectedFailed && (
           <Button
             className="button--grow results-dose-action"
+            disabled={isRecording}
             icon="check"
             onClick={handleDoseAction}
             variant="primary"
           >
-            복용하기
+            {isRecording ? "복용 기록 중..." : "복용하기"}
           </Button>
         )}
       </div>
+
+      {doseError && !isDoseModalOpen ? (
+        <p className="page-footnote page-footnote--error" role="alert">
+          {doseError}
+        </p>
+      ) : null}
 
       <p className="page-footnote">
         <Icon name="shield" size={15} />
@@ -734,7 +841,14 @@ export default function SearchResultsPage() {
 
       <DoseConfirmModal
         analysisWarning={isCautious}
-        onCancel={() => setDoseModalOpen(false)}
+        errorMessage={doseError}
+        isSubmitting={isRecording}
+        onCancel={() => {
+          if (!isRecording) {
+            setDoseModalOpen(false);
+            setDoseError("");
+          }
+        }}
         onConfirm={handleConfirmDose}
         open={isDoseModalOpen}
       />
