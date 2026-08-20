@@ -108,6 +108,7 @@ describe('app shell routing contract', () => {
     fireEvent.click(screen.getByRole('button', { name: /증상 리포트 두통 발열/ }))
 
     expect(screen.getByRole('dialog', { name: '증상 기록 문서 보기' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '저장하기' })).toBeInTheDocument()
   })
 
   it('keeps only the user information section on mypage', () => {
