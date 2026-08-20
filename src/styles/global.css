@@ -2646,6 +2646,18 @@ button:disabled {
   margin-top: 3px;
 }
 
+.identify-context-section {
+  margin-top: 28px;
+  padding-top: 26px;
+  border-top: 1px solid var(--border);
+}
+
+.identify-context-section--memo {
+  margin-top: 22px;
+  padding-top: 0;
+  border-top: 0;
+}
+
 .identify-upload-section {
   margin-top: 32px;
   padding-top: 26px;
