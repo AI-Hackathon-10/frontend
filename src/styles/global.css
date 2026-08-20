@@ -7730,3 +7730,316 @@ button:disabled {
     font-size: 19px;
   }
 }
+
+/* Home-aligned visual theme: identify and analysis flows. */
+.page--identify .page-header__copy h1,
+.page--results .page-header__copy h1,
+.page--identify .section-heading h2,
+.page--results .section-heading h2,
+.page--results .result-candidates__heading h2 {
+  color: #102b4a;
+}
+
+.page--identify .eyebrow,
+.page--results .eyebrow {
+  color: #208ed6;
+}
+
+.page--identify .symptom-count,
+.page--results .results-count {
+  color: #276fc6 !important;
+  background: linear-gradient(135deg, #e8f8ff, #edf2ff);
+  border: 1px solid #cfe4f7;
+}
+
+.page--identify .symptom-chip {
+  color: #385873;
+  background: rgba(255, 255, 255, 0.94);
+  border-color: #d3e4f2;
+  box-shadow: 0 6px 16px rgba(40, 113, 176, 0.06);
+}
+
+.page--identify .symptom-chip:hover {
+  color: #246fc5;
+  border-color: #83b9e7;
+}
+
+.page--identify .symptom-chip.is-selected {
+  color: white;
+  background: linear-gradient(125deg, #1fb8d6, #3977dc);
+  border-color: transparent;
+  box-shadow: 0 10px 20px rgba(43, 130, 208, 0.2);
+}
+
+.page--identify .symptom-chip.is-selected .symptom-chip__dot {
+  background: white;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.page--identify .symptom-selector__more {
+  color: #276fc6;
+  background: #f1f8ff;
+  border: 1px solid #d5e7f6;
+}
+
+.page--identify .symptom-selector__more:hover {
+  color: #185da9;
+  background: #e7f3ff;
+}
+
+.page--identify .selected-symptom-chip {
+  color: #276fc6;
+  background: linear-gradient(135deg, #e8f8ff, #edf2ff);
+  border-color: #bcd9f1;
+}
+
+.page--identify .identify-context-section,
+.page--identify .identify-upload-section {
+  border-color: #d8e8f5;
+}
+
+.page--identify .onset-relative-input {
+  color: #183653;
+  border-color: #d8e8f5;
+}
+
+.page--identify .onset-relative-input input,
+.page--identify .onset-field input {
+  color: #246fc5;
+  background: #fafdff;
+  border-color: #cfe1f0;
+  box-shadow: 0 6px 16px rgba(40, 113, 176, 0.05);
+}
+
+.page--identify .onset-relative-input input:focus,
+.page--identify .onset-field input:focus {
+  border-color: #3977dc;
+  box-shadow: 0 0 0 3px rgba(57, 119, 220, 0.13);
+}
+
+.page--identify .onset-quick-options {
+  background: #fbfdff;
+  border-color: #cfe1f0;
+  box-shadow: 0 6px 16px rgba(40, 113, 176, 0.05);
+}
+
+.page--identify .onset-quick-options button {
+  color: #617b92;
+  border-color: #dce9f4;
+}
+
+.page--identify .onset-quick-options button.is-selected {
+  color: #246fc5;
+  background: linear-gradient(135deg, #e8f8ff, #edf2ff);
+  box-shadow: inset 0 -2px 0 #3977dc;
+}
+
+.page--identify .onset-manual-toggle {
+  color: #3977dc;
+}
+
+.page--identify .upload-card {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: #d1e3f1;
+  box-shadow: 0 10px 24px rgba(40, 113, 176, 0.07);
+}
+
+.page--identify .upload-card__preview {
+  color: #617b92;
+  background: linear-gradient(145deg, #f7fbff, #eef7ff);
+  border-color: #a9cce8;
+}
+
+.page--identify .upload-card__preview:hover,
+.page--identify .upload-card.is-dragging .upload-card__preview {
+  color: #246fc5;
+  background: linear-gradient(145deg, #eef9ff, #e8f1ff);
+  border-color: #3977dc;
+}
+
+.page--identify .upload-card__empty-icon {
+  color: white;
+  background: linear-gradient(125deg, #1fb8d6, #3977dc);
+  box-shadow: 0 8px 18px rgba(43, 130, 208, 0.18);
+}
+
+.page--identify .upload-card__status {
+  color: #617b92;
+  background: #edf4fa;
+}
+
+.page--identify .pill-set-add {
+  color: #276fc6;
+  background: #f1f8ff;
+  border: 1px solid #d5e7f6;
+}
+
+.page--identify .pill-set-add:hover {
+  color: #185da9;
+  background: #e7f3ff;
+}
+
+.page--identify .identify-action-bar .button--primary,
+.page--results .results-actions .button--primary {
+  background: linear-gradient(125deg, #1fb8d6, #3977dc);
+  box-shadow: 0 14px 26px rgba(43, 130, 208, 0.22);
+}
+
+.page--identify .identify-action-bar .button--primary:hover,
+.page--results .results-actions .button--primary:hover {
+  box-shadow: 0 18px 30px rgba(43, 130, 208, 0.28);
+}
+
+.page--identify .identify-footnotes .icon {
+  color: #3977dc;
+}
+
+.symptom-sheet-backdrop,
+.upload-action-backdrop,
+.dose-modal-backdrop {
+  background: rgba(16, 43, 74, 0.52);
+  backdrop-filter: blur(7px);
+}
+
+.symptom-sheet,
+.upload-source-picker,
+.dose-modal {
+  background: #fff;
+  border-color: rgba(202, 224, 242, 0.94);
+  box-shadow: 0 30px 76px rgba(16, 43, 74, 0.25);
+}
+
+.symptom-sheet__header,
+.symptom-sheet__footer,
+.upload-source-picker__header {
+  border-color: #d8e8f5;
+}
+
+.symptom-sheet__header h3,
+.upload-source-picker__header h3,
+.dose-modal h2 {
+  color: #102b4a;
+}
+
+.symptom-sheet__close,
+.upload-source-picker__header button,
+.dose-modal__close {
+  color: #48647f;
+  background: #eef7ff;
+}
+
+.symptom-option {
+  color: #385873;
+  background: #fff;
+  border-color: #d3e4f2;
+}
+
+.symptom-option.is-selected {
+  color: #276fc6;
+  background: linear-gradient(135deg, #e8f8ff, #edf2ff);
+  border-color: #8dbce5;
+}
+
+.symptom-sheet__footer > span,
+.upload-source-picker__option:hover {
+  color: #276fc6;
+}
+
+.symptom-sheet__footer .button--primary,
+.dose-modal .button--primary {
+  background: linear-gradient(125deg, #1fb8d6, #3977dc);
+  box-shadow: 0 12px 24px rgba(43, 130, 208, 0.2);
+}
+
+.upload-source-picker__icon {
+  color: #276fc6;
+  background: linear-gradient(135deg, #e8f8ff, #edf2ff);
+}
+
+.upload-source-picker__cancel {
+  color: #48647f;
+  background: #eef4f9;
+}
+
+.page-scroll:has(.page--results),
+.page-content:has(.page--results) {
+  background: linear-gradient(180deg, #fbfdff, #f1f7fd);
+}
+
+.page--results .analysis-card {
+  background: #fff;
+  border-color: #cfe3f2;
+  box-shadow: 0 18px 42px rgba(35, 102, 164, 0.11);
+}
+
+.page--results .analysis-card--failed {
+  background: #fffafa;
+  border-color: #e8c4c4;
+}
+
+.page--results .analysis-card__context-row .result-symptom-chip {
+  color: #276fc6;
+  background: #eef7ff;
+  border-color: #c8e0f3;
+}
+
+.page--results .analysis-card__identity h2,
+.page--results .result-metric > div > strong {
+  color: #102b4a;
+}
+
+.page--results .result-metric:not(.result-metric--recommendation) .result-metric__track > span {
+  background: linear-gradient(90deg, #1fb8d6, #3977dc);
+}
+
+.page--results .result-details details {
+  background: #f5f9fe;
+  border: 1px solid #dce9f5;
+}
+
+.page--results .result-details summary {
+  color: #183653;
+}
+
+.page--results .result-detail-icon,
+.page--results .result-chevron-icon,
+.page--results .result-link-icon {
+  color: #3977dc;
+}
+
+.page--results .result-candidate {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: #d1e3f1;
+  box-shadow: 0 8px 20px rgba(40, 113, 176, 0.06);
+}
+
+.page--results .result-candidate[aria-pressed='true'] {
+  background: #f4f9ff;
+  border-color: #3977dc;
+  box-shadow: 0 10px 24px rgba(43, 130, 208, 0.17);
+}
+
+.page--results .result-candidate__selected {
+  background: linear-gradient(125deg, #1fb8d6, #3977dc);
+}
+
+.page--results .identify-result-state {
+  background: #fff;
+  border-color: #cfe3f2;
+  box-shadow: 0 16px 36px rgba(35, 102, 164, 0.09);
+}
+
+.page--results .button--outline {
+  color: #276fc6;
+  border-color: #a9cce8;
+}
+
+.page--results .results-actions--cautious .results-dose-action {
+  background: linear-gradient(125deg, #6aaec7, #4c83b6);
+  box-shadow: 0 10px 20px rgba(76, 131, 182, 0.18);
+}
+
+.warning-modal__sections section {
+  background: #f5f9fe;
+  border: 1px solid #dce9f5;
+}
