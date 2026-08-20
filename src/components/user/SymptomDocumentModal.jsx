@@ -1,12 +1,39 @@
 import { useEffect, useState } from 'react'
 import Icon from '../ui/Icon.jsx'
 
+const DEFAULT_DOCUMENT_DATA = {
+  userName: '홍길동',
+  birthDate: '1995-08-19',
+  drugName: '프리메정',
+}
+
+function formatDocumentDate(value) {
+  if (!value) return '-'
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value))
+}
+
+function DocumentImage({ alt, label, src }) {
+  if (src) {
+    return <img alt={alt} className="symptom-document__image" src={src} />
+  }
+
+  return (
+    <div aria-label={alt} className="symptom-document__image-placeholder" role="img">
+      <Icon name="image" size={28} />
+      <strong>{label}</strong>
+      <small>이미지 연결 전</small>
+    </div>
+  )
+}
+
 export default function SymptomDocumentModal({ open, report, onClose }) {
-  const [hasImageError, setImageError] = useState(false)
   const [saveStatus, setSaveStatus] = useState('')
 
   useEffect(() => {
-    setImageError(false)
     setSaveStatus('')
   }, [report])
 
@@ -23,34 +50,17 @@ export default function SymptomDocumentModal({ open, report, onClose }) {
 
   if (!open || !report) return null
 
+  const documentData = { ...DEFAULT_DOCUMENT_DATA, ...report }
+  const symptoms = documentData.symptoms?.join(' · ') || '-'
+  const startedAt = documentData.startedAt ?? documentData.createdAt
+  const takenAt = documentData.takenAt ?? documentData.createdAt
+
   const handleBackdropMouseDown = (event) => {
     if (event.target === event.currentTarget) onClose()
   }
 
-  const handleSaveDocument = async () => {
-    if (!report.documentImageUrl) {
-      setSaveStatus('저장할 문서 이미지가 아직 없습니다.')
-      return
-    }
-
-    try {
-      const response = await fetch(report.documentImageUrl)
-      if (!response.ok) throw new Error('문서 이미지를 불러오지 못했습니다.')
-
-      const blob = await response.blob()
-      const downloadUrl = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = `${report.title ?? 'symptom-report'}.png`
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-      URL.revokeObjectURL(downloadUrl)
-      setSaveStatus('문서 이미지를 저장했습니다.')
-    } catch {
-      window.open(report.documentImageUrl, '_blank', 'noopener,noreferrer')
-      setSaveStatus('이미지를 새 창에서 열었습니다. 메뉴에서 저장해 주세요.')
-    }
+  const handleSaveDocument = () => {
+    setSaveStatus('디바이스 저장 기능은 준비 중입니다.')
   }
 
   return (
@@ -67,15 +77,46 @@ export default function SymptomDocumentModal({ open, report, onClose }) {
         </button>
         <span className="account-modal__icon"><Icon name="notes" size={21} /></span>
         <h2 id="symptom-document-modal-title">증상 기록 문서 보기</h2>
-        <p className="account-modal__description">S3 Presigned URL 이미지 목업</p>
-        <div className="document-preview">
-          <img
-            alt="증상 기록 문서"
-            onError={() => setImageError(true)}
-            src={report.documentImageUrl}
-          />
-          {hasImageError ? <p role="status">문서 이미지 연결 전 목업 주소입니다.</p> : null}
-        </div>
+        <p className="account-modal__description">의료진에게 보여줄 수 있는 증상 기록 문서입니다.</p>
+        <article aria-label="증상 기록 문서" className="symptom-document">
+          <header className="symptom-document__header">
+            <div>
+              <span className="eyebrow">증상 문서</span>
+              <h3>나의 증상 기록</h3>
+            </div>
+            <Icon name="notes" size={25} />
+          </header>
+
+          <section className="symptom-document__section" aria-labelledby="symptom-document-user-title">
+            <h4 id="symptom-document-user-title">사용자 정보</h4>
+            <dl className="symptom-document__details">
+              <div><dt>이름</dt><dd>{documentData.userName}</dd></div>
+              <div><dt>생년월일</dt><dd>{documentData.birthDate}</dd></div>
+            </dl>
+          </section>
+
+          <section className="symptom-document__section" aria-labelledby="symptom-document-symptom-title">
+            <h4 id="symptom-document-symptom-title">증상 및 복용 기록</h4>
+            <dl className="symptom-document__details">
+              <div><dt>증상</dt><dd>{symptoms}</dd></div>
+              <div><dt>증상 시작 시점</dt><dd>{formatDocumentDate(startedAt)}</dd></div>
+              <div><dt>복용한 약품</dt><dd>{documentData.drugName}</dd></div>
+              <div><dt>복용 시점</dt><dd>{formatDocumentDate(takenAt)}</dd></div>
+            </dl>
+          </section>
+
+          <section className="symptom-document__section" aria-labelledby="symptom-document-image-title">
+            <h4 id="symptom-document-image-title">알약 판별 이미지</h4>
+            <div className="symptom-document__images">
+              <DocumentImage alt="약 앞면 이미지" label="앞면 이미지" src={documentData.frontImageUrl} />
+              <DocumentImage alt="약 뒷면 이미지" label="뒷면 이미지" src={documentData.backImageUrl} />
+            </div>
+          </section>
+
+          <footer className="symptom-document__footer">
+            문서 생성 시점: {formatDocumentDate(documentData.createdAt)}
+          </footer>
+        </article>
         <div className="document-preview__actions">
           <button className="button button--primary button--wide" onClick={handleSaveDocument} type="button">
             <Icon name="download" size={18} />
