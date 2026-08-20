@@ -121,6 +121,7 @@ export const SYMPTOM_REPORTS = [
     createdAt: '2026-08-19T14:30:00+09:00',
     symptoms: ['두통', '발열'],
     severity: '중간 정도',
+    memo: '오후부터 몸이 무겁고 미열이 있는 느낌입니다.',
     summary: '오늘 오후부터 두통과 발열이 시작되었고, 증상은 중간 정도로 느껴집니다.',
     documentImageUrl: 'https://example.com/presigned/symptom-report-1.png',
   },
@@ -130,6 +131,7 @@ export const SYMPTOM_REPORTS = [
     createdAt: '2026-08-12T21:10:00+09:00',
     symptoms: ['기침', '인후통'],
     severity: '가벼움',
+    memo: '밤이 되면서 기침과 목의 불편함이 조금 심해졌습니다.',
     summary: '기침과 인후통이 가볍게 느껴지는 상태입니다.',
     documentImageUrl: 'https://example.com/presigned/symptom-report-2.png',
   },
@@ -147,6 +149,7 @@ export function createSymptomReport({ symptoms, onsetDate, onsetTime, memo }) {
     createdAt: new Date().toISOString(),
     symptoms,
     severity: '사용자 입력 기록',
+    memo: memo?.slice(0, 200) ?? '',
     summary: [onsetLabel && `${onsetLabel}부터`, memo].filter(Boolean).join(' · ') || '사용자가 작성한 증상 기록입니다.',
     documentImageUrl: 'https://example.com/presigned/mock-symptom-report.png',
   }

@@ -5067,6 +5067,133 @@ button:disabled {
   margin-top: 16px;
 }
 
+.symptom-document {
+  margin-top: 18px;
+  padding: 22px 20px 18px;
+  color: var(--ink);
+  background: linear-gradient(180deg, #f9fdff 0%, #f1f9fc 100%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  text-align: left;
+}
+
+.symptom-document__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid var(--border);
+}
+
+.symptom-document__header > .icon {
+  flex: 0 0 auto;
+  color: var(--primary-strong);
+}
+
+.symptom-document__header h3 {
+  margin-top: 5px;
+  color: var(--ink);
+  font-size: 21px;
+  font-weight: 880;
+  letter-spacing: -0.07em;
+}
+
+.symptom-document__section {
+  padding: 17px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.symptom-document__section h4 {
+  margin-bottom: 12px;
+  color: var(--primary-strong);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.symptom-document__details {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.symptom-document__details > div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 10px;
+  align-items: baseline;
+}
+
+.symptom-document__details dt {
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.symptom-document__details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.symptom-document__memo {
+  max-height: 112px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.symptom-document__images {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.symptom-document__image,
+.symptom-document__image-placeholder {
+  display: grid;
+  width: 100%;
+  min-height: 105px;
+  place-items: center;
+  overflow: hidden;
+  color: var(--primary-strong);
+  background: white;
+  border: 1px dashed var(--border-strong);
+  border-radius: 13px;
+}
+
+.symptom-document__image {
+  height: 105px;
+  object-fit: cover;
+}
+
+.symptom-document__image-placeholder {
+  align-content: center;
+  gap: 6px;
+}
+
+.symptom-document__image-placeholder strong {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.symptom-document__image-placeholder small {
+  color: var(--ink-muted);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.symptom-document__footer {
+  padding-top: 14px;
+  color: var(--ink-muted);
+  font-size: 9px;
+  font-weight: 650;
+  text-align: right;
+}
+
 .document-save-status {
   margin-top: 9px;
   color: var(--ink-muted);

@@ -130,6 +130,13 @@ describe('app shell routing contract', () => {
     fireEvent.click(screen.getByRole('button', { name: /증상 리포트 두통 발열/ }))
 
     expect(screen.getByRole('dialog', { name: '증상 기록 문서 보기' })).toBeInTheDocument()
+    expect(screen.getByText('사용자 정보')).toBeInTheDocument()
+    expect(screen.getByText('홍길동')).toBeInTheDocument()
+    expect(screen.getByText('1995-08-19')).toBeInTheDocument()
+    expect(screen.getByText('두통 · 발열')).toBeInTheDocument()
+    expect(screen.getByText('프리메정')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '약 앞면 이미지' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '약 뒷면 이미지' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '저장하기' })).toBeInTheDocument()
   })
 
@@ -438,7 +445,7 @@ describe('authentication pages', () => {
     }
   })
 
-  it('shows symptom report cards and opens the selected document image', () => {
+  it('shows the selected symptom report as a document preview', () => {
     render(
       <MemoryRouter initialEntries={['/login']}>
         <App />
@@ -458,7 +465,14 @@ describe('authentication pages', () => {
     fireEvent.click(reportCard)
 
     expect(screen.getByRole('dialog', { name: '증상 기록 문서 보기' })).toBeInTheDocument()
-    expect(screen.getByAltText('증상 기록 문서')).toHaveAttribute('src', 'https://example.com/presigned/symptom-report-1.png')
+    expect(screen.getByText('사용자 정보')).toBeInTheDocument()
+    expect(screen.getByText('홍길동')).toBeInTheDocument()
+    expect(screen.getByText('1995-08-19')).toBeInTheDocument()
+    expect(screen.getByText('두통 · 발열')).toBeInTheDocument()
+    expect(screen.getByText('프리메정')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '약 앞면 이미지' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '약 뒷면 이미지' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '저장하기' })).toBeInTheDocument()
   })
 
   it('requires the current password before showing a password change success state', () => {
