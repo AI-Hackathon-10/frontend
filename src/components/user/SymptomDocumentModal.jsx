@@ -3,9 +3,11 @@ import Icon from '../ui/Icon.jsx'
 
 export default function SymptomDocumentModal({ open, report, onClose }) {
   const [hasImageError, setImageError] = useState(false)
+  const [saveStatus, setSaveStatus] = useState('')
 
   useEffect(() => {
     setImageError(false)
+    setSaveStatus('')
   }, [report])
 
   useEffect(() => {
@@ -23,6 +25,32 @@ export default function SymptomDocumentModal({ open, report, onClose }) {
 
   const handleBackdropMouseDown = (event) => {
     if (event.target === event.currentTarget) onClose()
+  }
+
+  const handleSaveDocument = async () => {
+    if (!report.documentImageUrl) {
+      setSaveStatus('저장할 문서 이미지가 아직 없습니다.')
+      return
+    }
+
+    try {
+      const response = await fetch(report.documentImageUrl)
+      if (!response.ok) throw new Error('문서 이미지를 불러오지 못했습니다.')
+
+      const blob = await response.blob()
+      const downloadUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = `${report.title ?? 'symptom-report'}.png`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(downloadUrl)
+      setSaveStatus('문서 이미지를 저장했습니다.')
+    } catch {
+      window.open(report.documentImageUrl, '_blank', 'noopener,noreferrer')
+      setSaveStatus('이미지를 새 창에서 열었습니다. 메뉴에서 저장해 주세요.')
+    }
   }
 
   return (
@@ -47,6 +75,13 @@ export default function SymptomDocumentModal({ open, report, onClose }) {
             src={report.documentImageUrl}
           />
           {hasImageError ? <p role="status">문서 이미지 연결 전 목업 주소입니다.</p> : null}
+        </div>
+        <div className="document-preview__actions">
+          <button className="button button--primary button--wide" onClick={handleSaveDocument} type="button">
+            <Icon name="download" size={18} />
+            저장하기
+          </button>
+          {saveStatus ? <p className="document-save-status" role="status">{saveStatus}</p> : null}
         </div>
       </div>
     </div>

@@ -43,7 +43,7 @@ describe('app shell routing contract', () => {
     ['/identify/shape', '알약 외형으로 찾기'],
     ['/search/results', '판별 결과'],
     ['/drugs/prime-tablet', '프리메정'],
-    ['/symptoms', '증상 기록'],
+    ['/symptoms', '증상 기록 리포트'],
   ])('renders the expected heading for %s', (route, heading) => {
     render(
       <MemoryRouter initialEntries={[route]}>
@@ -84,129 +84,44 @@ describe('app shell routing contract', () => {
     expect(searchButton).toBeDisabled()
   })
 
-  it('lets users select up to two symptoms and toggle them off again', () => {
+  it('renders symptom report cards instead of the symptom input form', () => {
     render(
       <MemoryRouter initialEntries={['/symptoms']}>
         <App />
       </MemoryRouter>,
     )
 
-    const headache = screen.getByRole('button', { name: '두통', exact: true })
-    const fever = screen.getByRole('button', { name: '발열', exact: true })
-    const cough = screen.getByRole('button', { name: '기침', exact: true })
-
-    expect(headache).toHaveAttribute('aria-pressed', 'false')
-    expect(fever).toHaveAttribute('aria-pressed', 'false')
-    expect(cough).toHaveAttribute('aria-pressed', 'false')
-
-    fireEvent.click(headache)
-    fireEvent.click(fever)
-    expect(headache).toHaveAttribute('aria-pressed', 'true')
-    expect(fever).toHaveAttribute('aria-pressed', 'true')
-
-    fireEvent.click(cough)
-    expect(cough).toHaveAttribute('aria-pressed', 'false')
-
-    fireEvent.click(headache)
-    expect(headache).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('heading', { name: '증상 기록 리포트' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /증상 리포트 두통 발열/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /증상 리포트 기침 인후통/ })).toBeInTheDocument()
+    expect(screen.queryByText('언제부터였나요?')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('증상 메모')).not.toBeInTheDocument()
   })
 
-  it('selects multiple symptoms from categorized symptom sheet', () => {
-    render(
-      <MemoryRouter initialEntries={['/identify/image']}>
-        <App />
-      </MemoryRouter>,
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: '다른 증상 찾기', exact: true }))
-    expect(screen.getByRole('dialog', { name: '증상 선택' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '감기·호흡기' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '피부' })).toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: '재채기', exact: true }))
-    fireEvent.click(screen.getByRole('button', { name: '발진', exact: true }))
-    fireEvent.click(screen.getByRole('button', { name: '선택 완료', exact: true }))
-
-    expect(screen.getByRole('button', { name: '재채기 삭제', exact: true })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '발진 삭제', exact: true })).toBeInTheDocument()
-  })
-
-  it('provides date and hourly time inputs for symptom onset', () => {
+  it('opens a symptom document when a report card is selected', () => {
     render(
       <MemoryRouter initialEntries={['/symptoms']}>
         <App />
       </MemoryRouter>,
     )
 
-    const onsetDate = screen.getByLabelText('증상 시작 날짜')
-    const onsetTime = screen.getByLabelText('증상 시작 시간')
+    fireEvent.click(screen.getByRole('button', { name: /증상 리포트 두통 발열/ }))
 
-    expect(onsetDate).toHaveAttribute('type', 'date')
-    expect(onsetTime).toHaveAttribute('type', 'time')
-    expect(onsetTime).toHaveAttribute('step', '3600')
+    expect(screen.getByRole('dialog', { name: '증상 기록 문서 보기' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '저장하기' })).toBeInTheDocument()
   })
 
-  it('lets users type a symptom memo and shows the current character count', () => {
+  it('keeps only the user information section on mypage', () => {
     render(
-      <MemoryRouter initialEntries={['/symptoms']}>
+      <MemoryRouter initialEntries={['/mypage']}>
         <App />
       </MemoryRouter>,
     )
-
-    const memo = screen.getByLabelText('증상 메모')
-    expect(memo.tagName).toBe('TEXTAREA')
-    expect(memo).toHaveValue('')
-
-    fireEvent.change(memo, { target: { value: '오후부터 몸이 무겁습니다.' } })
-    expect(memo).toHaveValue('오후부터 몸이 무겁습니다.')
-    expect(screen.getByText('14 / 200')).toBeInTheDocument()
-  })
-
-  it('creates a symptom document mock and moves the user to mypage', () => {
-    render(
-      <MemoryRouter initialEntries={['/login']}>
-        <App />
-      </MemoryRouter>,
-    )
-
-    fireEvent.change(screen.getByLabelText('아이디'), { target: { value: 'pill-user' } })
-    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'mock-password' } })
-    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
-    fireEvent.click(screen.getAllByRole('link', { name: '증상 기록' })[0])
-
-    fireEvent.click(screen.getByRole('button', { name: '복통', exact: true }))
-    fireEvent.click(screen.getByRole('button', { name: '두통', exact: true }))
-    fireEvent.change(screen.getByLabelText('증상 시작 날짜'), { target: { value: '2026-08-19' } })
-    fireEvent.change(screen.getByLabelText('증상 시작 시간'), { target: { value: '14:00' } })
-    fireEvent.change(screen.getByLabelText('증상 메모'), { target: { value: '식사 후 복통이 있습니다.' } })
-    fireEvent.click(screen.getByRole('button', { name: '증상 문서 만들기', exact: true }))
 
     expect(screen.getByRole('heading', { name: '마이페이지' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /복통/ })).toBeInTheDocument()
-    expect(screen.queryByText('현재 상태를 한 문장으로')).not.toBeInTheDocument()
-  })
-
-  it('explains why the symptom document button is disabled until required inputs are complete', () => {
-    render(
-      <MemoryRouter initialEntries={['/symptoms']}>
-        <App />
-      </MemoryRouter>,
-    )
-
-    const createButton = screen.getByRole('button', { name: '증상 문서 만들기', exact: true })
-    expect(createButton).toBeDisabled()
-    expect(screen.getByRole('status')).toHaveTextContent('증상 2개와 시작 날짜·시간을 입력해 주세요.')
-
-    fireEvent.click(screen.getByRole('button', { name: '복통', exact: true }))
-    expect(screen.getByRole('status')).toHaveTextContent('증상을 1개 더 선택해 주세요.')
-
-    fireEvent.click(screen.getByRole('button', { name: '두통', exact: true }))
-    expect(screen.getByRole('status')).toHaveTextContent('시작 날짜와 시간을 입력해 주세요.')
-
-    fireEvent.change(screen.getByLabelText('증상 시작 날짜'), { target: { value: '2026-08-19' } })
-    fireEvent.change(screen.getByLabelText('증상 시작 시간'), { target: { value: '14:00' } })
-    expect(createButton).toBeEnabled()
-    expect(screen.getByRole('status')).toHaveTextContent('입력한 내용으로 증상 문서를 만들 수 있어요.')
+    expect(screen.getByRole('heading', { name: '홍길동' })).toBeInTheDocument()
+    expect(screen.queryByText('증상 기록 리포트')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /증상 리포트/ })).not.toBeInTheDocument()
   })
 
   it('passes selected symptoms into the mock result screen', () => {
