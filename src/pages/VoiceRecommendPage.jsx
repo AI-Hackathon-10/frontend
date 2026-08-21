@@ -25,6 +25,30 @@ function isHallucination(text) {
   return matchCount >= 2
 }
 
+// 증상 관련 키워드 — STT 결과가 실제 증상을 포함하는지 검증
+const SYMPTOM_KEYWORDS = [
+  // 통증 표현
+  '아프', '아파', '통증', '쑤시', '저리', '욱신', '뻐근', '결리', '쓰리', '따끔', '찌릿', '얼얼',
+  // 신체 부위
+  '머리', '배', '목', '어깨', '허리', '무릎', '가슴', '등', '팔', '다리', '손', '발',
+  '눈', '귀', '코', '입', '잇몸', '치아', '이빨', '피부', '관절', '근육', '종아리', '손목', '발목',
+  // 증상명
+  '두통', '복통', '요통', '치통', '생리통', '편두통', '신경통',
+  '기침', '콧물', '가래', '재채기', '코막힘',
+  '열', '발열', '오한', '몸살', '감기', '독감',
+  '설사', '변비', '구토', '메스꺼', '속쓰림', '소화', '배탈', '체하', '더부룩',
+  '어지러', '현기증', '두근', '숨', '답답',
+  '가려', '두드러기', '발진', '습진', '알레르기', '비염', '천식',
+  '붓', '부어', '염증', '감염', '멍',
+  '불면', '피로', '무기력',
+  '출혈', '피나', '상처', '화상', '데',
+]
+
+function looksLikeSymptom(text) {
+  if (!text || text.trim().length < 2) return false
+  return SYMPTOM_KEYWORDS.some((kw) => text.includes(kw))
+}
+
 const PHASES = {
   IDLE: 'IDLE',
   ASK_SYMPTOM: 'ASK_SYMPTOM',
@@ -144,6 +168,23 @@ export default function VoiceRecommendPage() {
             setPhase(PHASES.IDLE) // 잠깐 다른 상태로
             setTimeout(() => {
               if (!cancelled) setPhase(currentPhase)
+            }, 100)
+          }
+          return
+        }
+
+        // 증상 단계에서 증상 키워드가 없으면 다시 말해달라고 요청
+        if (currentPhase === PHASES.LISTEN_SYMPTOM && !looksLikeSymptom(text)) {
+          addMessage('user', text)
+          scrollToBottom()
+          const retryMsg = '증상을 잘 이해하지 못했어요. 어디가 아프신지 다시 말씀해 주세요.'
+          addMessage('ai', retryMsg)
+          scrollToBottom()
+          await playTts(retryMsg)
+          if (!cancelled) {
+            setPhase(PHASES.IDLE)
+            setTimeout(() => {
+              if (!cancelled) setPhase(PHASES.LISTEN_SYMPTOM)
             }, 100)
           }
           return
@@ -271,7 +312,7 @@ export default function VoiceRecommendPage() {
         {phase === PHASES.ERROR && (
           <div className="voice-chat__error-area">
             <p>{errorMsg}</p>
-            <button className="btn btn--primary" onClick={handleRetry} type="button">다시 시도하기</button>
+            <button className="button button--primary" onClick={handleRetry} type="button">다시 시도하기</button>
           </div>
         )}
 
@@ -324,7 +365,7 @@ export default function VoiceRecommendPage() {
             )}
 
             <div className="voice-chat__retry-area">
-              <button className="btn btn--primary" onClick={handleRetry} type="button">다시 추천받기</button>
+              <button className="button button--primary" onClick={handleRetry} type="button">다시 추천받기</button>
             </div>
           </div>
         )}
